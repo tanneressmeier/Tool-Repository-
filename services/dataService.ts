@@ -5,15 +5,15 @@ import { PURCHASING_PLAN_DATA } from '../purchasingPlanData';
 
 const LATENCY = 150; // Reduced latency for better UX in a simulated environment
 
-// --- Single-User Data Keys ---
-const getKey = (key: string) => `tooling-app-${key}`;
+// --- Multi-User Data Keys ---
+const getKey = (key: string, user: string) => `tooling-app-${user}-${key}`;
 
 // --- Aircraft Data ---
-export const getAircraftData = (): Promise<AircraftData[]> => {
+export const getAircraftData = (user: string): Promise<AircraftData[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       try {
-        const key = getKey('aircraftData');
+        const key = getKey('aircraftData', user);
         const savedJSON = window.localStorage.getItem(key);
         if (savedJSON) {
             resolve(JSON.parse(savedJSON));
@@ -31,11 +31,11 @@ export const getAircraftData = (): Promise<AircraftData[]> => {
   });
 };
 
-export const saveAircraftData = (aircraftData: AircraftData[]): Promise<void> => {
+export const saveAircraftData = (aircraftData: AircraftData[], user: string): Promise<void> => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       try {
-        window.localStorage.setItem(getKey('aircraftData'), JSON.stringify(aircraftData));
+        window.localStorage.setItem(getKey('aircraftData', user), JSON.stringify(aircraftData));
         resolve();
       } catch (error) {
         console.error("Failed to save aircraft data to localStorage", error);
@@ -46,11 +46,11 @@ export const saveAircraftData = (aircraftData: AircraftData[]): Promise<void> =>
 };
 
 // --- Kits ---
-export const getKits = (): Promise<Kit[]> => {
+export const getKits = (user: string): Promise<Kit[]> => {
     return new Promise((resolve) => {
         setTimeout(() => {
             try {
-                const savedKitsJSON = window.localStorage.getItem(getKey('kits'));
+                const savedKitsJSON = window.localStorage.getItem(getKey('kits', user));
                 resolve(savedKitsJSON ? JSON.parse(savedKitsJSON) : []);
             } catch (error) {
                 console.error("Failed to parse kits from localStorage", error);
@@ -60,11 +60,11 @@ export const getKits = (): Promise<Kit[]> => {
     });
 };
 
-export const saveKits = (kits: Kit[]): Promise<void> => {
+export const saveKits = (kits: Kit[], user: string): Promise<void> => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             try {
-                window.localStorage.setItem(getKey('kits'), JSON.stringify(kits));
+                window.localStorage.setItem(getKey('kits', user), JSON.stringify(kits));
                 resolve();
             } catch (error) {
                 console.error("Failed to save kits to localStorage", error);
@@ -75,11 +75,11 @@ export const saveKits = (kits: Kit[]): Promise<void> => {
 };
 
 // --- Master Inventory ---
-export const getMasterInventory = (): Promise<Tool[]> => {
+export const getMasterInventory = (user: string): Promise<Tool[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       try {
-        const key = getKey('masterInventory');
+        const key = getKey('masterInventory', user);
         const savedInventory = window.localStorage.getItem(key);
         if (savedInventory) {
             resolve(JSON.parse(savedInventory));
@@ -96,11 +96,11 @@ export const getMasterInventory = (): Promise<Tool[]> => {
   });
 };
 
-export const saveMasterInventory = (inventory: Tool[]): Promise<void> => {
+export const saveMasterInventory = (inventory: Tool[], user: string): Promise<void> => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             try {
-                window.localStorage.setItem(getKey('masterInventory'), JSON.stringify(inventory));
+                window.localStorage.setItem(getKey('masterInventory', user), JSON.stringify(inventory));
                 resolve();
             } catch (error) {
                 console.error("Failed to save master inventory to localStorage", error);
@@ -111,11 +111,11 @@ export const saveMasterInventory = (inventory: Tool[]): Promise<void> => {
 };
 
 // --- Purchasing Plan ---
-export const getPurchasePlan = (): Promise<PurchasePlanItem[]> => {
+export const getPurchasePlan = (user: string): Promise<PurchasePlanItem[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
        try {
-        const key = getKey('purchasePlan');
+        const key = getKey('purchasePlan', user);
         const savedPlan = window.localStorage.getItem(key);
         if (savedPlan) {
             resolve(JSON.parse(savedPlan));
@@ -132,11 +132,11 @@ export const getPurchasePlan = (): Promise<PurchasePlanItem[]> => {
   });
 };
 
-export const savePurchasePlan = (plan: PurchasePlanItem[]): Promise<void> => {
+export const savePurchasePlan = (plan: PurchasePlanItem[], user: string): Promise<void> => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             try {
-                window.localStorage.setItem(getKey('purchasePlan'), JSON.stringify(plan));
+                window.localStorage.setItem(getKey('purchasePlan', user), JSON.stringify(plan));
                 resolve();
             } catch (error) {
                 console.error("Failed to save purchase plan to localStorage", error);
