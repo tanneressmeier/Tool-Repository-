@@ -1,0 +1,5 @@
+{
+  "name": "Tool Inventory Checker",
+  "description": "An expert system to compare a 'Needed Tools' list against a 'Master Tool Inventory' to determine availability and shortages using the Gemini API.",
+  "requestFramePermissions": []
+}
