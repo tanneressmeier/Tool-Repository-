@@ -1,7 +1,7 @@
 import type { AircraftData, Tool, Kit, PurchasePlanItem } from '../types';
 import { MASTER_TOOL_INVENTORY } from '../constants';
 import { PRELOADED_AIRCRAFT_DATA } from '../preloadedData';
-import { PURCHASING_PLAN_DATA } from '../purchasingPlanData';
+import { processPurchasePlanCsv } from './geminiService';
 
 const LATENCY = 150; // Reduced latency for better UX in a simulated environment
 
@@ -113,20 +113,28 @@ export const saveMasterInventory = (inventory: Tool[], user: string): Promise<vo
 // --- Purchasing Plan ---
 export const getPurchasePlan = (user: string): Promise<PurchasePlanItem[]> => {
   return new Promise((resolve) => {
-    setTimeout(() => {
-       try {
+    setTimeout(async () => {
+      try {
         const key = getKey('purchasePlan', user);
-        const savedPlan = window.localStorage.getItem(key);
-        if (savedPlan) {
-            resolve(JSON.parse(savedPlan));
+        const savedPlanJSON = window.localStorage.getItem(key);
+        if (savedPlanJSON) {
+          resolve(JSON.parse(savedPlanJSON));
         } else {
-            // First time using app, seed with preloaded data
-            window.localStorage.setItem(key, JSON.stringify(PURCHASING_PLAN_DATA));
-            resolve(PURCHASING_PLAN_DATA);
+          // First time load: fetch CSV, parse with AI, save to localStorage
+          console.log("First time load: parsing purchasing plan CSV with AI.");
+          const response = await fetch('/purchasing_plan.csv');
+          if (!response.ok) {
+              throw new Error('Failed to fetch purchasing_plan.csv');
+          }
+          const csvContent = await response.text();
+          const parsedPlan = await processPurchasePlanCsv(csvContent);
+          
+          window.localStorage.setItem(key, JSON.stringify(parsedPlan));
+          resolve(parsedPlan);
         }
       } catch (error) {
-        console.error("Failed to parse purchase plan from localStorage", error);
-        resolve(PURCHASING_PLAN_DATA); 
+        console.error("Failed to get or parse purchase plan:", error);
+        resolve([]); // Resolve with an empty array on error
       }
     }, LATENCY);
   });

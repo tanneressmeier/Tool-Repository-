@@ -4,7 +4,7 @@ import { ShoppingCartIcon } from './icons/ShoppingCartIcon';
 
 interface InventoryCardProps {
   title: string;
-  tools: (Tool | string)[];
+  tools: Tool[];
   status: 'master' | 'available' | 'shortage' | 'onOrder';
   onImport?: (file: File) => void;
   isImporting?: boolean;
@@ -63,10 +63,6 @@ const EmptyListIcon: React.FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 
-const isTool = (item: any): item is Tool => {
-  return (item as Tool).name !== undefined;
-}
-
 const InventoryCard: React.FC<InventoryCardProps> = ({ title, tools, status, onImport, isImporting, onExport, onSave, onLoadKit, onFindSourcing, isNeededToolsList, onFocusManualEntry }) => {
   const styles = statusStyles[status];
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,14 +72,13 @@ const InventoryCard: React.FC<InventoryCardProps> = ({ title, tools, status, onI
   const isCollapsible = isNeededToolsList && tools.length > COLLAPSE_THRESHOLD;
 
   const groupedTools = useMemo(() => {
-    const validTools = tools.filter(isTool);
     // Grouping only applies to "Needed Tools" list when categories are present
-    if (status !== 'master' || !validTools.every(t => t.category)) {
-      return { 'All Tools': validTools };
+    if (status !== 'master' || !tools.every(t => t.category)) {
+      return { 'All Tools': tools };
     }
     
     const groups: { [key: string]: Tool[] } = {};
-    validTools.forEach(tool => {
+    tools.forEach(tool => {
         const category = tool.category || 'Uncategorized';
         if (!groups[category]) {
             groups[category] = [];
@@ -263,8 +258,7 @@ const InventoryCard: React.FC<InventoryCardProps> = ({ title, tools, status, onI
                    <h4 className="font-semibold text-cyan-400 text-sm mt-4 mb-2 sticky top-0 bg-gray-800/80 backdrop-blur-sm py-1 px-1 rounded-md">{category}</h4>
                 )}
                 <ul className="space-y-2">
-                  {/* Fix: Cast toolList to Tool[] to resolve the type error on .map, as TypeScript inference may fail with Object.entries. */}
-                  {(toolList as Tool[]).map((tool, index) => renderToolItem(tool, index))}
+                  {toolList.map((tool, index) => renderToolItem(tool, index))}
                 </ul>
               </div>
             ))}

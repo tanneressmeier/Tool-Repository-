@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import type { ComparisonResult, Tool, SuggestedSubstitution, SourcingInfo, AircraftData, SavedToolList, SavedComparison, ToastMessage, Kit, PurchasePlanItem, MaintenanceTask } from './types';
-import { compareInventories, processCsvInventory, processNeededToolsCsv, getToolSourcingInfo, predictToolsForJob, analyzeMaintenanceTasks } from './services/geminiService';
+import { compareInventories, processCsvInventory, processNeededToolsCsv, getToolSourcingInfo, predictToolsForJob, analyzeMaintenanceTasks, processPurchasePlanCsv } from './services/geminiService';
 import * as dataService from './services/dataService';
 import InventoryCard from './components/InventoryCard';
 import ShortageReportModal from './components/ShortageReportModal';
@@ -21,18 +21,16 @@ import PredictiveTooling from './components/PredictiveTooling';
 import SourcingInfoModal from './components/SourcingInfoModal';
 import PurchasingManager from './components/PurchasingManager';
 import ReportGenerationModal from './components/ReportGenerationModal';
-import { DocumentArrowDownIcon } from './components/icons/DocumentArrowDownIcon';
 import AddAircraftModal from './components/AddAircraftModal';
 import MaintenanceEventAnalysisModal from './components/MaintenanceEventAnalysisModal';
-import PDFReport from './components/PDFReport';
-import Login from './components/Login';
 import { CubeIcon } from './components/icons/CubeIcon';
 import { DataIcon } from './components/icons/DataIcon';
 import { ShoppingCartIcon } from './components/icons/ShoppingCartIcon';
 import { CheckBadgeIcon } from './components/icons/CheckBadgeIcon';
+import PDFReport from './components/PDFReport';
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<string | null>(() => sessionStorage.getItem('tooling-app-user'));
+  const user = 'default_user';
   const [neededTools, setNeededTools] = useState<Tool[]>([]);
   const [result, setResult] = useState<ComparisonResult | null>(null);
   const [isComparing, setIsComparing] = useState<boolean>(false);
@@ -43,8 +41,11 @@ const App: React.FC = () => {
   const [purchasePlan, setPurchasePlan] = useState<PurchasePlanItem[]>([]);
   const [isAppLoading, setIsAppLoading] = useState<boolean>(true);
 
+  const [activeAircraft, setActiveAircraft] = useState<AircraftData | null>(null);
+
   const [isMasterImporting, setIsMasterImporting] = useState<boolean>(false);
   const [isNeededImporting, setIsNeededImporting] = useState<boolean>(false);
+  const [isPlanImporting, setIsPlanImporting] = useState<boolean>(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
   const { route, navigate } = useSimpleRouter();
   const [toolsToDelete, setToolsToDelete] = useState<Tool[]>([]);
@@ -86,32 +87,8 @@ const App: React.FC = () => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
 
-  // --- Auth Handlers ---
-  const handleLogin = (username: string) => {
-    setUser(username);
-    sessionStorage.setItem('tooling-app-user', username);
-    addToast(`Welcome, ${username}! Your workspace is ready.`, 'success');
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    sessionStorage.removeItem('tooling-app-user');
-    addToast('You have been logged out.', 'info');
-    // Reset app state
-    setNeededTools([]);
-    setResult(null);
-    setError(null);
-    setMasterInventory([]);
-    setAircraftData([]);
-    setKits([]);
-    setPurchasePlan([]);
-    navigate('checker');
-  };
-
   // --- Initial Data Load on Mount ---
   useEffect(() => {
-    if (!user) return; // Don't load data if not logged in
-
     const loadInitialData = async () => {
       setIsAppLoading(true);
       try {
@@ -121,8 +98,59 @@ const App: React.FC = () => {
           dataService.getKits(user),
           dataService.getPurchasePlan(user),
         ]);
+        
+        // Dynamically create aircraft profiles from the purchasing plan
+        const aircraftFromPlan = new Map<string, Tool[]>();
+        plan.forEach(item => {
+            const aircrafts = item.aircraft.split(',').map(a => a.trim()).filter(Boolean);
+            if (item.itemType !== 'Tool' && item.itemType !== 'Consumable') return;
+
+            const tool: Tool = {
+                name: item.name,
+                manufacturer: item.manufacturer || 'N/A',
+                partNumber: item.partNumber,
+                serialNumber: 'N/A',
+                description: item.reason,
+                category: item.itemType,
+            };
+            
+            aircrafts.forEach(acName => {
+                if (!aircraftFromPlan.has(acName)) {
+                    aircraftFromPlan.set(acName, []);
+                }
+                const existingTools = aircraftFromPlan.get(acName)!;
+                if (!existingTools.some(t => t.partNumber === tool.partNumber && t.name === tool.name)) {
+                   existingTools.push(tool);
+                }
+            });
+        });
+
+        const newAircraftDataList: AircraftData[] = [];
+        const existingAircraftNames = new Set(aircraftList.map(ac => ac.name));
+
+        for (const [aircraftName, tools] of aircraftFromPlan.entries()) {
+            const newName = `${aircraftName} (Purchasing)`;
+            if (existingAircraftNames.has(newName)) continue; // Idempotency check
+
+            newAircraftDataList.push({
+                id: `ac-purchasing-${aircraftName.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-')}`,
+                name: newName,
+                createdAt: new Date().toISOString(),
+                toolLists: [{
+                    id: `list-purchasing-${aircraftName.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-')}`,
+                    name: `Purchasing Plan Items`,
+                    maintenanceEvent: 'Purchasing Plan',
+                    tools: tools,
+                    createdAt: new Date().toISOString()
+                }],
+                comparisons: []
+            });
+        }
+        
+        const combinedAircraftList = [...aircraftList, ...newAircraftDataList];
+
         setMasterInventory(inventory);
-        setAircraftData(aircraftList);
+        setAircraftData(combinedAircraftList);
         setKits(loadedKits);
         setPurchasePlan(plan);
       } catch (error) {
@@ -133,14 +161,14 @@ const App: React.FC = () => {
       }
     };
     loadInitialData();
-  }, [addToast, user]);
+  }, [addToast]);
 
 
   // --- Data Persistence ---
   const useDebouncedSave = <T,>(data: T, saveFunction: (data: T, user: string) => Promise<void>, toastMessage: string) => {
     const isInitialMount = useRef(true);
     useEffect(() => {
-        if (!user || isInitialMount.current || isAppLoading) {
+        if (isInitialMount.current || isAppLoading) {
             isInitialMount.current = false;
             return;
         }
@@ -154,7 +182,7 @@ const App: React.FC = () => {
         return () => {
             clearTimeout(handler);
         };
-    }, [data, saveFunction, toastMessage, isAppLoading, user]);
+    }, [data, saveFunction, toastMessage, isAppLoading]);
   };
   
   useDebouncedSave(aircraftData, dataService.saveAircraftData, 'Failed to save aircraft data.');
@@ -163,7 +191,6 @@ const App: React.FC = () => {
 
   // --- Master Inventory CRUD Handlers ---
   const handleAddTool = (newTool: Omit<Tool, 'serialNumber'> & { serialNumber?: string }) => {
-    if (!user) return;
     const toolToAdd: Tool = {
         toolId: `BJC-${(masterInventory.length + 1).toString().padStart(3, '0')}`,
         description: newTool.description || 'N/A',
@@ -190,7 +217,6 @@ const App: React.FC = () => {
   };
 
   const handleUpdateTool = (updatedTool: Tool) => {
-    if (!user) return;
     const updatedInventory = masterInventory.map(t => (t.toolId === updatedTool.toolId && t.serialNumber === updatedTool.serialNumber) ? updatedTool : t);
     setMasterInventory(updatedInventory);
     dataService.saveMasterInventory(updatedInventory, user)
@@ -207,7 +233,7 @@ const App: React.FC = () => {
   };
   
   const handleConfirmDelete = () => {
-    if (!user || toolsToDelete.length === 0) return;
+    if (toolsToDelete.length === 0) return;
 
     const idsToDelete = new Set(toolsToDelete.map(t => t.serialNumber));
     const updatedInventory = masterInventory.filter(t => !idsToDelete.has(t.serialNumber));
@@ -234,6 +260,7 @@ const App: React.FC = () => {
   const handlePredictTools = (predictedTools: Tool[]) => {
     const toolsWithSerial = predictedTools.map(t => ({...t, serialNumber: 'N/A'}));
     setNeededTools(toolsWithSerial);
+    setActiveAircraft(null);
   };
 
   const handleCompare = async () => {
@@ -255,7 +282,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleFileImport = (processor: (content: string) => Promise<Tool[]>, setter: React.Dispatch<React.SetStateAction<Tool[]>>, importingSetter: React.Dispatch<React.SetStateAction<boolean>>, successMessage: string) => async (file: File) => {
+  const handleFileImport = (processor: (content: string) => Promise<Tool[]>, setter: React.Dispatch<React.SetStateAction<Tool[]>>, importingSetter: React.Dispatch<React.SetStateAction<boolean>>, successMessage: string, clearActiveAircraft?: boolean) => async (file: File) => {
     importingSetter(true);
     setError(null);
     try {
@@ -263,6 +290,9 @@ const App: React.FC = () => {
       const processedTools = await processor(content);
       setter(processedTools);
       addToast(successMessage, 'success');
+      if (clearActiveAircraft) {
+        setActiveAircraft(null);
+      }
     } catch (e: any) {
       setError(e.message);
       addToast(e.message, 'error');
@@ -272,7 +302,24 @@ const App: React.FC = () => {
   };
   
   const handleMasterImport = handleFileImport(processCsvInventory, setMasterInventory, setIsMasterImporting, 'Master inventory updated successfully!');
-  const handleNeededImport = handleFileImport(processNeededToolsCsv, setNeededTools, setIsNeededImporting, 'Needed tools list loaded successfully!');
+  const handleNeededImport = handleFileImport(processNeededToolsCsv, setNeededTools, setIsNeededImporting, 'Needed tools list loaded successfully!', true);
+
+  const handlePlanImport = async (file: File) => {
+    setIsPlanImporting(true);
+    setError(null);
+    try {
+      const content = await file.text();
+      const newPlan = await processPurchasePlanCsv(content);
+      setPurchasePlan(newPlan);
+      addToast(`Purchase plan successfully updated with ${newPlan.length} items.`, 'success');
+    } catch (e: any) {
+      const errorMessage = e.message || 'An unknown error occurred during import.';
+      setError(errorMessage);
+      addToast(errorMessage, 'error');
+    } finally {
+      setIsPlanImporting(false);
+    }
+  };
 
   const handleFindSourcing = async (tool: Tool) => {
     setIsSourcingModalOpen(true);
@@ -341,6 +388,7 @@ const App: React.FC = () => {
     setNeededTools(kit.tools);
     addToast(`Loaded kit "${kit.name}"`, 'success');
     setIsLoadKitModalOpen(false);
+    setActiveAircraft(null);
   };
 
   // --- Data Hub Handlers ---
@@ -372,10 +420,11 @@ const App: React.FC = () => {
   const handleLoadToolList = (aircraftId: string, listId: string) => {
     const aircraft = aircraftData.find(ac => ac.id === aircraftId);
     const list = aircraft?.toolLists.find(l => l.id === listId);
-    if (list) {
+    if (list && aircraft) {
       setNeededTools(list.tools);
+      setActiveAircraft(aircraft);
       navigate('checker');
-      addToast(`Loaded list "${list.name}"`, 'success');
+      addToast(`Loaded list "${list.name}" from "${aircraft.name}"`, 'success');
     }
   };
   
@@ -391,9 +440,10 @@ const App: React.FC = () => {
   const handleViewComparison = (aircraftId: string, comparisonId: string) => {
     const aircraft = aircraftData.find(ac => ac.id === aircraftId);
     const comparison = aircraft?.comparisons.find(c => c.id === comparisonId);
-    if (comparison) {
+    if (comparison && aircraft) {
       setResult(comparison.result);
       setNeededTools(Object.values(comparison.result).flat().filter(t => typeof t !== 'string') as Tool[]);
+      setActiveAircraft(aircraft);
       navigate('checker');
       addToast(`Viewing report "${comparison.name}"`, 'success');
     }
@@ -429,15 +479,46 @@ const App: React.FC = () => {
       setIsAnalyzing(false);
     }
   };
-  
-  if (!user) {
-    return (
-      <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
-        <Login onLogin={handleLogin} />
-      </div>
-    );
-  }
 
+  const handleExportPdf = () => {
+    if (!result) return;
+    const reportWindow = window.open('', '_blank');
+    if (reportWindow) {
+        reportWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8" />
+                <title>Tooling Report</title>
+                <script src="https://cdn.tailwindcss.com"></script>
+                <style>
+                    @media print {
+                        @page { margin: 0.5in; }
+                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        .no-print { display: none; }
+                    }
+                </style>
+            </head>
+            <body class="bg-white">
+                <div id="report-root"></div>
+            </body>
+            </html>
+        `);
+        reportWindow.document.close();
+
+        const reportRootEl = reportWindow.document.getElementById('report-root');
+        if (reportRootEl) {
+            const root = ReactDOM.createRoot(reportRootEl);
+            root.render(<PDFReport result={result} sourcingData={new Map()} isQuickReport={true} aircraftName={activeAircraft?.name} />);
+            
+            setTimeout(() => {
+                reportWindow.focus();
+                reportWindow.print();
+            }, 1000);
+        }
+    }
+  };
+  
   const navItems = [
     { id: 'checker', label: 'Checker', icon: CheckBadgeIcon },
     { id: 'manager', label: 'Manager', icon: ToolIcon },
@@ -459,17 +540,13 @@ const App: React.FC = () => {
       <LoadKitModal isOpen={isLoadKitModalOpen} onClose={() => setIsLoadKitModalOpen(false)} kits={kits} onLoadKit={handleLoadKit} />
       <AddAircraftModal isOpen={isAddAircraftModalOpen} onClose={() => setIsAddAircraftModalOpen(false)} onAdd={handleAddAircraft} />
       <MaintenanceEventAnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} eventName={analyzingEvent?.eventName} isLoading={isAnalyzing} tasks={analysisResult} />
-      <ReportGenerationModal isOpen={isReportGenerationModalOpen} onClose={() => setIsReportGenerationModalOpen(false)} result={result} sourcingData={reportSourcingCache.current} progress={reportGenerationProgress} />
+      <ReportGenerationModal isOpen={isReportGenerationModalOpen} onClose={() => setIsReportGenerationModalOpen(false)} result={result} sourcingData={reportSourcingCache.current} progress={reportGenerationProgress} aircraftName={activeAircraft?.name} />
 
       <div className="container mx-auto px-4 py-6">
         <header className="flex flex-col sm:flex-row justify-between items-center mb-6">
           <div className="flex items-center gap-3 mb-4 sm:mb-0">
             <ToolIcon className="w-10 h-10 text-cyan-400" />
             <h1 className="text-3xl font-extrabold text-white">Tool Inventory System</h1>
-          </div>
-          <div className='flex items-center gap-4'>
-            <span className="text-sm text-gray-400">Welcome, {user}</span>
-            <button onClick={handleLogout} className="text-sm font-semibold text-gray-400 hover:text-white transition-colors">Logout</button>
           </div>
         </header>
 
@@ -528,6 +605,7 @@ const App: React.FC = () => {
                         availableCount={result.available.length}
                         onOrderCount={result.onOrder.length}
                         shortageCount={result.shortage.length}
+                        onExportPdf={handleExportPdf}
                       />
                       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                           <InventoryCard title="Available" tools={result.available} status="available" />
@@ -592,6 +670,8 @@ const App: React.FC = () => {
               masterInventory={masterInventory}
               onAddTool={handleAddTool}
               addToast={addToast}
+              onImportPlan={handlePlanImport}
+              isImportingPlan={isPlanImporting}
             />
            )}
         </main>

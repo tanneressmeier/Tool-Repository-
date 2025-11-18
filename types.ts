@@ -10,6 +10,11 @@ export interface Tool {
   calibrationDueDays?: number;
   location?: string;
   category?: string;
+  // Fields for On-Order tools from purchasing plan
+  quantity?: string;
+  unitPrice?: string;
+  totalPrice?: string;
+  sourcingLink?: string;
 }
 
 export interface SuggestedSubstitution {
@@ -86,6 +91,7 @@ export interface ToastMessage {
 export interface PurchasePlanItem {
   id: string;
   aircraft: string;
+  itemType: string;
   name: string;
   partNumber: string;
   manufacturer: string;
@@ -98,5 +104,5 @@ export interface PurchasePlanItem {
   requestId: string;
   status: string;
   notes: string;
-  received?: boolean; // New field for tracking
+  received?: boolean;
 }

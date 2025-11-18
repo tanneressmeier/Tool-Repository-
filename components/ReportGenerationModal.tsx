@@ -9,9 +9,10 @@ interface ReportGenerationModalProps {
   result: ComparisonResult | null;
   sourcingData: Map<string, SourcingInfo | { error: string }>;
   progress: { current: number; total: number; status: 'idle' | 'running' | 'complete' | 'error' };
+  aircraftName?: string;
 }
 
-const ReportGenerationModal: React.FC<ReportGenerationModalProps> = ({ isOpen, onClose, result, sourcingData, progress }) => {
+const ReportGenerationModal: React.FC<ReportGenerationModalProps> = ({ isOpen, onClose, result, sourcingData, progress, aircraftName }) => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -54,7 +55,7 @@ const ReportGenerationModal: React.FC<ReportGenerationModalProps> = ({ isOpen, o
         const reportRootEl = reportWindow.document.getElementById('report-root');
         if (reportRootEl) {
             const root = ReactDOM.createRoot(reportRootEl);
-            root.render(<PDFReport result={result} sourcingData={sourcingData} isQuickReport={false} />);
+            root.render(<PDFReport result={result} sourcingData={sourcingData} isQuickReport={false} aircraftName={aircraftName} />);
             
             // Wait for render and styles to apply
             setTimeout(() => {

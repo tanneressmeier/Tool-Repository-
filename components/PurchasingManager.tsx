@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import type { Tool, PurchasePlanItem } from '../types';
 
 interface PurchasingManagerProps {
@@ -6,6 +6,8 @@ interface PurchasingManagerProps {
     masterInventory: Tool[];
     onAddTool: (tool: Omit<Tool, 'serialNumber'> & { serialNumber?: string }) => void;
     addToast: (message: string, type: 'success' | 'error' | 'info') => void;
+    onImportPlan: (file: File) => void;
+    isImportingPlan: boolean;
 }
 
 const CheckIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>;
@@ -20,15 +22,17 @@ const statusColors: { [key: string]: string } = {
   'Received': 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
   'In Research': 'bg-purple-500/20 text-purple-300 border-purple-500/30',
   'Not Needed': 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  'Ordered': 'bg-orange-500/20 text-orange-300 border-orange-500/30',
 };
 
-const PurchasingManager: React.FC<PurchasingManagerProps> = ({ purchasePlan, masterInventory, onAddTool, addToast }) => {
+const PurchasingManager: React.FC<PurchasingManagerProps> = ({ purchasePlan, masterInventory, onAddTool, addToast, onImportPlan, isImportingPlan }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     const masterInventoryPartNumbers = useMemo(() => new Set(masterInventory.map(t => t.partNumber.toUpperCase().trim())), [masterInventory]);
 
-    const uniqueStatuses = useMemo(() => Array.from(new Set(purchasePlan.map(item => item.status))), [purchasePlan]);
+    const uniqueStatuses = useMemo(() => Array.from(new Set(purchasePlan.map(item => item.status).filter(Boolean))), [purchasePlan]);
 
     const filteredPlan = useMemo(() => {
         return purchasePlan.filter(item => {
@@ -55,9 +59,19 @@ const PurchasingManager: React.FC<PurchasingManagerProps> = ({ purchasePlan, mas
         addToast(`"${item.name}" added to master inventory.`, 'success');
     };
 
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            onImportPlan(file);
+        }
+        if (event.target) {
+            event.target.value = '';
+        }
+    };
+
     return (
         <div className="bg-gray-800/50 p-6 rounded-2xl shadow-lg border border-gray-700">
-            <h2 className="text-2xl font-semibold text-white mb-4">Tooling Purchasing Plan</h2>
+            <h2 className="text-2xl font-semibold text-white mb-4">Tooling Purchasing Plan ({purchasePlan.length} items)</h2>
             <div className="flex flex-col sm:flex-row items-center gap-4 mb-4 pb-4 border-b border-gray-700">
                 <input
                     type="text"
@@ -74,6 +88,14 @@ const PurchasingManager: React.FC<PurchasingManagerProps> = ({ purchasePlan, mas
                     <option value="all">All Statuses</option>
                     {uniqueStatuses.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".csv,text/csv" className="hidden" />
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isImportingPlan}
+                    className="w-full sm:w-auto bg-gray-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-wait transition-colors"
+                >
+                    {isImportingPlan ? 'Importing...' : 'Import CSV'}
+                </button>
             </div>
             <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-700">
@@ -100,7 +122,14 @@ const PurchasingManager: React.FC<PurchasingManagerProps> = ({ purchasePlan, mas
                                         </span>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <div className="text-sm font-medium text-gray-200">{item.name}</div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-sm font-medium text-gray-200">{item.name}</div>
+                                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                                                item.itemType === 'Tool' ? 'bg-blue-500/30 text-blue-300' :
+                                                item.itemType === 'Part' ? 'bg-green-500/30 text-green-300' :
+                                                'bg-gray-500/30 text-gray-300'
+                                            }`}>{item.itemType}</span>
+                                        </div>
                                         <div className="text-xs text-gray-400" title={item.partNumber}>P/N: {primaryPartNumber}</div>
                                         <div className="text-xs text-gray-500">Mfg: {item.manufacturer}</div>
                                     </td>

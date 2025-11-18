@@ -1,11 +1,19 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { ComparisonResult, Tool, SourcingInfo, SuggestedSubstitution, PurchasePlanItem, MaintenanceTask } from '../types';
 
-if (!process.env.API_KEY) {
-  console.warn("API_KEY environment variable not set. The application may not function correctly.");
+let ai: GoogleGenAI | null = null;
+
+function getAi(): GoogleGenAI {
+    if (!ai) {
+        if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) {
+            console.error("Gemini API key is not configured. AI features will be disabled.");
+            throw new Error("API Key is not configured.");
+        }
+        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    }
+    return ai;
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
 /**
  * Cleans and parses a JSON string that might be wrapped in markdown or have other anomalies.
@@ -149,6 +157,7 @@ export async function processCsvInventory(csvContent: string): Promise<Tool[]> {
   `;
 
   try {
+    const ai = getAi();
     const response = await ai.models.generateContent({
       model,
       contents: prompt,
@@ -195,6 +204,7 @@ export async function processNeededToolsCsv(csvContent: string): Promise<Tool[]>
   `;
 
   try {
+    const ai = getAi();
     const response = await ai.models.generateContent({
       model,
       contents: prompt,
@@ -221,7 +231,6 @@ export async function compareInventories(masterInventory: Tool[], neededTools: T
   const masterPartNumberMap = new Map<string, Tool>();
   masterInventory.forEach(tool => {
     if (tool.partNumber && tool.partNumber !== 'N/A') {
-      // Handle comma-separated part numbers.
       const partNumbers = tool.partNumber.split(',').map(pn => pn.trim().toUpperCase());
       partNumbers.forEach(pn => {
         if (pn) {
@@ -231,7 +240,13 @@ export async function compareInventories(masterInventory: Tool[], neededTools: T
     }
   });
   
-  const purchasePlanPartNumbers = new Set(purchasePlan.map(item => item.partNumber.split('(')[0].trim().toUpperCase()));
+  const purchasePlanMap = new Map<string, PurchasePlanItem>();
+    purchasePlan.forEach(item => {
+        const partNumber = item.partNumber.split('(')[0].trim().toUpperCase();
+        if (partNumber) {
+            purchasePlanMap.set(partNumber, item);
+        }
+    });
 
   const available: Tool[] = [];
   const onOrder: Tool[] = [];
@@ -245,7 +260,6 @@ export async function compareInventories(masterInventory: Tool[], neededTools: T
               neededToolsMap.set(partNumber, tool);
           }
       } else {
-          // Handle tools without part numbers as automatic shortages if no exact name match
           const existing = masterInventory.find(t => t.name.toLowerCase() === tool.name.toLowerCase());
           if (existing) {
               available.push(existing);
@@ -258,14 +272,23 @@ export async function compareInventories(masterInventory: Tool[], neededTools: T
   for (const [partNumber, tool] of neededToolsMap.entries()) {
       if (masterPartNumberMap.has(partNumber)) {
           available.push(masterPartNumberMap.get(partNumber)!);
-      } else if (purchasePlanPartNumbers.has(partNumber)) {
-          onOrder.push(tool);
+      } else if (purchasePlanMap.has(partNumber)) {
+           const purchaseItem = purchasePlanMap.get(partNumber)!;
+            const onOrderTool: Tool = {
+                ...tool,
+                name: purchaseItem.name,
+                manufacturer: purchaseItem.manufacturer,
+                quantity: purchaseItem.quantity,
+                unitPrice: purchaseItem.unitPrice,
+                totalPrice: purchaseItem.totalPrice,
+                sourcingLink: purchaseItem.sourcingLink,
+            };
+            onOrder.push(onOrderTool);
       } else {
           shortage.push(tool);
       }
   }
 
-  // AI substitution logic is now more focused.
   const suggestedSubstitutions = await findSubstitutions(shortage, masterInventory);
 
   return { available, onOrder, shortage, suggestedSubstitutions };
@@ -279,26 +302,23 @@ async function findSubstitutions(shortage: Tool[], masterInventory: Tool[]): Pro
 
     const model = 'gemini-2.5-flash';
 
-    // Pre-filter master inventory to create a more relevant, smaller context for the AI
     const shortageKeywords = new Set<string>();
     shortage.forEach(tool => {
         tool.name.toLowerCase().split(/[\s-/()]+/).forEach(word => {
-            if (word.length > 2 && !/\d/.test(word)) shortageKeywords.add(word); // Add non-numeric words
+            if (word.length > 2 && !/\d/.test(word)) shortageKeywords.add(word);
         });
     });
 
     const relevantMasterTools = masterInventory.filter(masterTool => {
-        // Direct manufacturer match is a strong signal
         if (shortage.some(s => s.manufacturer !== 'N/A' && s.manufacturer.toLowerCase() === masterTool.manufacturer.toLowerCase())) {
             return true;
         }
-        // Keyword match on the tool name
         const masterKeywords = new Set(masterTool.name.toLowerCase().split(/[\s-/()]+/).filter(w => w.length > 2));
         for (const keyword of shortageKeywords) {
             if (masterKeywords.has(keyword)) return true;
         }
         return false;
-    }).slice(0, 250); // Limit context size to prevent overly large requests
+    }).slice(0, 250);
 
     const relevantInventoryString = JSON.stringify(relevantMasterTools);
     const shortageString = JSON.stringify(shortage);
@@ -329,6 +349,7 @@ async function findSubstitutions(shortage: Tool[], masterInventory: Tool[]): Pro
   `;
 
     try {
+        const ai = getAi();
         const response = await ai.models.generateContent({
             model,
             contents: prompt,
@@ -388,6 +409,7 @@ export async function getToolSourcingInfo(tool: Tool): Promise<SourcingInfo> {
     `;
     
     try {
+        const ai = getAi();
         const response = await ai.models.generateContent({
             model,
             contents: prompt,
@@ -454,6 +476,7 @@ export async function queryInventory(query: string, inventory: Tool[]): Promise<
   `;
 
   try {
+    const ai = getAi();
     const response = await ai.models.generateContent({
       model,
       contents: prompt,
@@ -530,6 +553,7 @@ export async function predictToolsForJob(jobDescription: string): Promise<Tool[]
     `;
 
     try {
+        const ai = getAi();
         const response = await ai.models.generateContent({
             model,
             contents: prompt,
@@ -622,6 +646,7 @@ export async function analyzeMaintenanceTasks(maintenanceEvent: string, toolList
     `;
 
     try {
+        const ai = getAi();
         const response = await ai.models.generateContent({
             model,
             contents: prompt,
@@ -646,5 +671,104 @@ export async function analyzeMaintenanceTasks(maintenanceEvent: string, toolList
     } catch (error) {
         console.error("Error calling Gemini API for maintenance analysis:", error);
         throw new Error("Failed to analyze maintenance event with the AI model.");
+    }
+}
+
+const purchasePlanItemSchema = {
+    type: Type.OBJECT,
+    properties: {
+        id: { type: Type.STRING, description: "A unique identifier for the item, can be derived from the part number and a counter." },
+        aircraft: { type: Type.STRING, description: "From the 'Aircraft Type' column." },
+        itemType: { type: Type.STRING, description: "From the 'Type' column (e.g., 'Tool', 'Part', 'Consumable')." },
+        name: { type: Type.STRING, description: "From the 'Description' column." },
+        partNumber: { type: Type.STRING, description: "From the 'Part Number' column." },
+        manufacturer: { type: Type.STRING, description: "From the 'Manufacture' column." },
+        reason: { type: Type.STRING, description: "From the 'Need Type' column." },
+        stage: { type: Type.STRING, description: "From the 'Priority' column." },
+        unitPrice: { type: Type.STRING, description: "From the 'Price as Listed' column." },
+        quantity: { type: Type.STRING, description: "From the 'Qty' column." },
+        totalPrice: { type: Type.STRING, description: "From the 'Total Cost' column." },
+        sourcingLink: { type: Type.STRING, description: "From the 'Web links' column." },
+        requestId: { type: Type.STRING, description: "From the 'PO Number' column." },
+        status: { type: Type.STRING, description: "From the 'Status' column." },
+        notes: { type: Type.STRING, description: "From the 'Comments' column." },
+        received: { type: Type.BOOLEAN, description: "Derived from the 'Recieved?' column. True if 'yes' or a date is present, otherwise false." },
+    },
+    required: ['id'],
+};
+
+const purchasePlanSchema = {
+    type: Type.OBJECT,
+    properties: {
+        items: {
+            type: Type.ARRAY,
+            description: "A list of purchasing plan items extracted from the text.",
+            items: purchasePlanItemSchema,
+        },
+    },
+    required: ['items'],
+};
+
+export async function processPurchasePlanCsv(csvContent: string): Promise<PurchasePlanItem[]> {
+    const model = 'gemini-2.5-flash';
+
+    const prompt = `You are an expert data processor for an aviation maintenance company. Your task is to analyze the following tab-separated text from a purchasing plan file and convert it into a structured JSON array.
+
+    The data has the following columns. Map them to the JSON fields as specified:
+    - 'Aircraft Type' -> 'aircraft'
+    - 'Type' -> 'itemType' (e.g., 'Tool', 'Part', 'Consumable')
+    - 'Description' -> 'name'
+    - 'Part Number' -> 'partNumber'
+    - 'Manufacture' -> 'manufacturer'
+    - 'Need Type' -> 'reason'
+    - 'Priority' -> 'stage'
+    - 'Price as Listed' -> 'unitPrice'
+    - 'Qty' -> 'quantity'
+    - 'Total Cost' -> 'totalPrice'
+    - 'Web links' -> 'sourcingLink'
+    - 'PO Number' -> 'requestId'
+    - 'Status' -> 'status'
+    - 'Comments' -> 'notes'
+    - 'Recieved?' -> 'received' (boolean: true if 'yes' or a date is present, otherwise false)
+
+    **Instructions:**
+    1.  Parse each row of the tab-separated data, ignoring the header row.
+    2.  Create a unique 'id' for each item. You can use the partNumber combined with the row index.
+    3.  Clean the data: trim all whitespace from each field.
+    4.  If a field is empty, represent it as an empty string ("").
+    5.  Handle the 'received' field by converting values like 'yes' or any date into a boolean 'true'. Empty or other values should be 'false'.
+    6.  Some rows might be empty or placeholders (e.g., "MRO Tooling Wishlist"). Filter these out. Only include rows that have at least a name or part number.
+    7.  Process every row that contains meaningful data. Ensure the final output is a clean JSON array representing all valid items from the source file.
+
+    **CRITICAL OUTPUT FORMAT:**
+    Your response MUST be ONLY a single, raw JSON object that strictly matches the provided schema. Do not include any markdown (like \`\`\`json), text, greetings, or explanations.
+
+    ---
+    FILE CONTENT:
+    ${csvContent}
+    ---
+    `;
+
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: purchasePlanSchema,
+                temperature: 0.0,
+            },
+        });
+
+        const parsed = cleanAndParseJson<{ items: PurchasePlanItem[] }>(response.text);
+        if (Array.isArray(parsed.items)) {
+            return parsed.items;
+        }
+        throw new Error('Parsed JSON does not contain an "items" array for the purchase plan.');
+
+    } catch (error) {
+        console.error("Error calling Gemini API for purchase plan CSV processing:", error);
+        throw new Error("Failed to process the purchase plan file with the AI model.");
     }
 }

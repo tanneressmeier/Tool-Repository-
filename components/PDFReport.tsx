@@ -6,9 +6,10 @@ interface PDFReportProps {
   result: ComparisonResult;
   sourcingData: Map<string, SourcingInfo | { error: string }>;
   isQuickReport?: boolean;
+  aircraftName?: string;
 }
 
-const PDFReport: React.FC<PDFReportProps> = ({ result, sourcingData, isQuickReport = false }) => {
+const PDFReport: React.FC<PDFReportProps> = ({ result, sourcingData, isQuickReport = false, aircraftName }) => {
     const reportDate = new Date().toLocaleString();
 
     const Section: React.FC<{title: string, count: number, color: string, children: React.ReactNode}> = ({title, count, color, children}) => (
@@ -28,6 +29,21 @@ const PDFReport: React.FC<PDFReportProps> = ({ result, sourcingData, isQuickRepo
             <p className="text-sm text-gray-600">
                 <span className="font-medium">P/N:</span> {tool.partNumber} | <span className="font-medium">Mfg:</span> {tool.manufacturer}
             </p>
+        </div>
+    );
+    
+    const OnOrderItem: React.FC<{tool: Tool}> = ({ tool }) => (
+        <div className="py-2 px-3 border-b border-gray-200">
+            <p className="font-semibold text-gray-800">{tool.name}</p>
+            <p className="text-sm text-gray-600">
+                <span className="font-medium">P/N:</span> {tool.partNumber} | <span className="font-medium">Mfg:</span> {tool.manufacturer}
+            </p>
+            <div className="mt-1 pl-4 text-xs text-gray-700 space-y-0.5">
+                {tool.quantity && <p><span className="font-semibold">Qty:</span> {tool.quantity}</p>}
+                {tool.unitPrice && <p><span className="font-semibold">Unit Price:</span> {tool.unitPrice}</p>}
+                {tool.totalPrice && <p><span className="font-semibold">Total:</span> {tool.totalPrice}</p>}
+                {tool.sourcingLink && <p><span className="font-semibold">Source:</span> <a href={tool.sourcingLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{tool.sourcingLink}</a></p>}
+            </div>
         </div>
     );
 
@@ -87,8 +103,8 @@ const PDFReport: React.FC<PDFReportProps> = ({ result, sourcingData, isQuickRepo
                     <h1 className="text-4xl font-extrabold flex items-center gap-3">
                         <ToolIcon className="w-9 h-9" /> 
                         Tooling Report
-                        {isQuickReport && <span className="text-2xl font-normal text-gray-500">(Quick View)</span>}
                     </h1>
+                     {aircraftName && <h2 className="text-2xl font-normal text-gray-700">{aircraftName}</h2>}
                     <p className="text-gray-600">Generated on {reportDate}</p>
                 </div>
                 <div className="text-right">
@@ -108,10 +124,7 @@ const PDFReport: React.FC<PDFReportProps> = ({ result, sourcingData, isQuickRepo
                 </Section>
                  <Section title="On Order (Purchasing Plan)" count={result.onOrder.length} color="bg-purple-600">
                     <div className="space-y-1">
-                        {isQuickReport
-                            ? result.onOrder.map((tool, i) => <ToolItem key={`${tool.partNumber}-${i}`} tool={tool} />)
-                            : result.onOrder.map((tool, i) => <SourcedToolItem key={`${tool.partNumber}-${i}`} tool={tool} />)
-                        }
+                        {result.onOrder.map((tool, i) => <OnOrderItem key={`${tool.partNumber}-${i}`} tool={tool} />)}
                     </div>
                 </Section>
                 <Section title="Shortages (Action Required)" count={result.shortage.length} color="bg-red-600">

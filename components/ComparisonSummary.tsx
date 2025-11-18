@@ -17,13 +17,23 @@ interface ComparisonSummaryProps {
   availableCount: number;
   onOrderCount: number;
   shortageCount: number;
+  onExportPdf: () => void;
 }
 
-const ComparisonSummary: React.FC<ComparisonSummaryProps> = ({ totalNeeded, availableCount, onOrderCount, shortageCount }) => {
+const ComparisonSummary: React.FC<ComparisonSummaryProps> = ({ totalNeeded, availableCount, onOrderCount, shortageCount, onExportPdf }) => {
   const fillRate = totalNeeded > 0 ? (availableCount / totalNeeded) * 100 : 0;
 
   return (
-    <div className="bg-gray-900/50 p-5 rounded-xl shadow-md border border-gray-700 mb-6">
+    <div className="bg-gray-900/50 p-5 rounded-xl shadow-md border border-gray-700">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold">Comparison Summary</h3>
+        <button
+            onClick={onExportPdf}
+            className="bg-cyan-700 text-white text-sm font-semibold py-1.5 px-4 rounded-md hover:bg-cyan-600 transition-colors"
+        >
+            Export PDF
+        </button>
+      </div>
       <div className="mb-4">
         <div className="flex justify-between items-center mb-1">
           <span className="text-sm font-medium text-gray-300">Inventory Fill Rate</span>
