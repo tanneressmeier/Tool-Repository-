@@ -1,183 +1,99 @@
+
 import type { AircraftData, Tool } from './types';
 
+export const INCOMING_SALE_LIST_TEXT = `9988100-2 Data Monitor System - QTY. 1 
+CJMDX34-004B Static Test Set - QTY. 1
+T9-1269K Horizontal Stabilizer Trim Actuator Test Module - QTY. 1
+678809-1 Throttle Quadrant Test Box - QTY. 1
+ Pressure Test Adapter for RMT Model 856DF-5/-6 & Pressure Test Adapter for RMT Model 856DF-7/-8 .Both in the same case. Parts included already assembled: 
+00884-0166 Pressure Sleeve QTY. 1
+00884-0169 Pressure Sleeve QTY. 1 
+C08099-0001 Clamp QTY. 2
+C09904-0005 Fitting, PITOT QTY. 2
+C09904-0004 Fitting. STATIC QTY. 3
+00884-0100 STOP QTY. 5
+C09846-0003 QUAD RING QTY. 4
+C09846-0001 QUAD RING QTY. 2
+00884-0168-0001 TEST PROBE QTY. 1
+C09846-0009 QUAD RING QTY. 3
+C09846-0008 QUAD RING QTY. 1
+C09846-0003 QUAD RING QTY. 1
+00884-0173 SLEEVE DRAIN QTY. 1
+00884-0171-0001 TEST PROBE QTY. 1 
+C09846-0010 QUAD RING QTY. 1
+33410-125-4 Static Test Adapter QTY. 2
+DME KIT CITATION X QTY. 4 Kits contain the following:
+KIT (1 of 4)
+9988100-7 extender card QTY. 2
+F5-97-1 diagnostic cable QTY. 2
+Belkin data transfer cable QTY. 1
+9555024-1 AHRS Test Cable QTY. 1
+6788023-1 AIS Test Cable QTY. 1
+9988100-6 harness QTY. 1
+1U632-601 DMU to computer cable QTY. 1
+9988100-4 P3 to P4 cable QTY. 1
+9988100-3 P1 to P2 cable QTY. 2
+9988100-5 P7 to P8 cable QTY. 2
+RLCD-SL1 QTY. 1
+6788022-1 P1 to J1 cable QTY. 1
+9988100-14 cable data monitor QTY. 1
+9988100-9 elec. Module box lid-cabin QTY. 1
+9988100-8 elec. Module box lid-baggage QTY. 1 
+KIT (2 of 4)
+9988100-3 P1 to P2 cable QTY. 1
+9988100-5 P7 to P8 cable QTY. 2
+9988100-7 extender card QTY. 4
+9988100-9 elec. Module box lid-cabin QTY. 1
+1U632-501 bulkhead to DMU cable QTY. 1
+9988100-4 P3 to P4 cable QTY. 2
+9988100-6 P5 to P6 cable QTY. 1
+KIT (3 of 4) 
+F5-97-1 diagnostic cable
+9988100-4 P3 to P4 cable QTY. 1
+9988100-3 P1 to P2 cable QTY. 1
+9988100-5 P7 to P8 cable QTY. 2
+9988100-6 P5 to P6 cable QTY. 1
+9988100-8 elec. Module box lid-baggage QTY. 1
+9988100-9 elec. Module box lid-cabin QTY. 1
+KIT (4 of 4)
+9988100-3 P1 to P2 cable QTY. 1
+9988100-5 P7 to P8 cable QTY. 2
+9988100-7 extender card QTY. 1
+9988100-4 P3 to P4 cable QTY. 1
+9988100-8 elec. Module box lid-baggage QTY. 2
+F5-97-1 Diagnostic cable QTY. 1
+9988100-6 P5 to P6 cable QTY. 1
+9988100-14 cable data monitor QTY. 1 
+9555024-1 AHRS Test cable QTY. 1
+Also including these items not within a kit.
+9988100-9 elec. Module box lid-cabin QTY. 1
+9988100-8  elec. Module box lid-baggage QTY. 2`;
+
 export const CESSNA_525_TOOLS: Tool[] = [
-  { "name": "Nose Jack", "partNumber": "02-0517-0132", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Nose Jack", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Wing Jack", "partNumber": "02-0526-0100", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Wing Jack", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Wing Jack", "partNumber": "02-0526-C0110", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Wing Jack", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Tail Stand", "partNumber": "03-5815-0000", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Tail Stand", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Nose Gear Jack Pad Kit", "partNumber": "5520151-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Nose Gear Jack Pad Kit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Main Gear Jack Pad", "partNumber": "R-1798", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Main Gear Jack Pad", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Heavy Duty Tow Bar", "partNumber": "01-1101-0000", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Heavy Duty Tow Bar", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Tow Bar", "partNumber": "01-1112-0000", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Tow Bar", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Pitot Cover", "partNumber": "CJMD110-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Pitot Cover", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Pitot Cover (CJ3)", "partNumber": "WP81338-4", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Pitot Cover (CJ3)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Exterior Windshield Cover", "partNumber": "CJMD110-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Exterior Windshield Cover", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Sun Screen", "partNumber": "CJMD110-003", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Sun Screen", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Interior Windshield Cover", "partNumber": "CJMD210-003", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Interior Windshield Cover", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Static Wick Covers", "partNumber": "7101", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Static Wick Covers", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Hydraulic Service Hand Pump", "partNumber": "06-4035-0500", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Hydraulic Service Hand Pump", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Hydraulic Service Unit", "partNumber": "05-7044-1210", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Hydraulic Service Unit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Hydraulic Ground Power Unit", "partNumber": "CJMD812-002", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Hydraulic Ground Power Unit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Portable Hydraulic Ground Power Unit (110V)", "partNumber": "CJMD812-003-110V", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Portable Hydraulic Ground Power Unit (110V)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Portable Hydraulic Ground Power Unit (220V)", "partNumber": "CJMD812-003-220V", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Portable Hydraulic Ground Power Unit (220V)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "200 Ampere DC Power Unit", "partNumber": "SP7001C-003", "manufacturer": "N/A", "serialNumber": "N/A", "description": "200 Ampere DC Power Unit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "300 Ampere DC Power Unit", "partNumber": "MH32-300K24M", "manufacturer": "N/A", "serialNumber": "N/A", "description": "300 Ampere DC Power Unit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Battery Charger", "partNumber": "RF80H", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Battery Charger", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Battery Charger", "partNumber": "PCA-131", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Battery Charger", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Mechanic's Tool Kit", "partNumber": "2135CCB", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Mechanic's Tool Kit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Lead Acid Charger Battery", "partNumber": "Alpha C-20 4142", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Lead Acid Charger Battery", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Lead Acid Analyzer Battery", "partNumber": "Beta D-50 4126", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Lead Acid Analyzer Battery", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Strut/Oleo Servicing Tool", "partNumber": "CJMDX12-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Strut/Oleo Servicing Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Cabin Pressurization Test Cart", "partNumber": "15A-7603-1000", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Cabin Pressurization Test Cart", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Cabin Pressurization Breakout Box", "partNumber": "6388008-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Cabin Pressurization Breakout Box", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Coax Crimper", "partNumber": "69478-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Coax Crimper", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Coax Crimper", "partNumber": "69646", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Coax Crimper", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Crimper", "partNumber": "59250", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Crimper", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Crimper", "partNumber": "59230", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Crimper", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Crimper", "partNumber": "47907-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Crimper", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Crimper", "partNumber": "612179", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Crimper", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Removal Tool", "partNumber": "ATBX2070", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Removal Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Insertion Tool", "partNumber": "ATBX1073", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Insertion Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Insertion Tool", "partNumber": "AT4000", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Insertion Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Removal Tool", "partNumber": "ATD2095", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Removal Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Removal Tool", "partNumber": "ATD2097", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Removal Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Removal Tool", "partNumber": "A-305183", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Removal Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Insertion Tool", "partNumber": "AT1020", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Insertion Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Removal Tool", "partNumber": "AT2020", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Removal Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Insertion Tool", "partNumber": "ATB1067", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Insertion Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Insertion Tool", "partNumber": "ATD1035", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Insertion Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Insertion Tool", "partNumber": "MI5513-16", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Insertion Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Removal Tool", "partNumber": "MI5515-16", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Removal Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Insertion Tool", "partNumber": "ATR1080", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Insertion Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Removal Tool", "partNumber": "ATR2080", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Removal Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Insertion Tool", "partNumber": "ATR1107", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Insertion Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Crimper", "partNumber": "M22520/1-01", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Crimper", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Removal Tool", "partNumber": "GER-TF", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Removal Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Electrical Repair Kit", "partNumber": "DMC205", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Electrical Repair Kit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Wemac Tool", "partNumber": "CJMDX25-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Wemac Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Wemac Tool", "partNumber": "CJMD325-011", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Wemac Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Cover, Crew Seat Slip", "partNumber": "5514155-21", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Cover, Crew Seat Slip", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Slip Cover, Passenger Left Aft and Right Forward Facing Seats", "partNumber": "4711141-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Slip Cover, Passenger Left Aft and Right Forward Facing Seats", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Cover, Side Facing Seat", "partNumber": "4711141-2", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Cover, Side Facing Seat", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Vinyl Maintenance Runner (525A)", "partNumber": "6319536-8", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Vinyl Maintenance Runner (525A)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Vinyl Maintenance Runner (525B)", "partNumber": "4717203-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Vinyl Maintenance Runner (525B)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Slip Cover, Passenger Left Forward and Right Aft Facing Seats", "partNumber": "4711141-6", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Slip Cover, Passenger Left Forward and Right Aft Facing Seats", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Cable Tensiometer", "partNumber": "T60-1001-C8-1A", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Cable Tensiometer", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Inclinometer", "partNumber": "KS5549", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Inclinometer", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Rudder Check Fixture", "partNumber": "CJMD8A27-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Rudder Check Fixture", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Rudder Trim Tab Check Fixture", "partNumber": "CJMD827-003", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Rudder Trim Tab Check Fixture", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Aileron, Elevator And Rudder Trim Freeplay Check Fixture", "partNumber": "CJMD827-002", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Aileron, Elevator And Rudder Trim Freeplay Check Fixture", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Rudder Cable Tension Rig Pin", "partNumber": "CJMD827-005", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Rudder Cable Tension Rig Pin", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Rudder Pedal Tension/Clamping Tool Kit", "partNumber": "CJMDL27-004", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Rudder Pedal Tension/Clamping Tool Kit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Elevator Inclinometer Locator Tool", "partNumber": "OF49-05542", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Elevator Inclinometer Locator Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Left Elevator Rig Boards", "partNumber": "OF49-01483", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Left Elevator Rig Boards", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Right Elevator Rig Boards", "partNumber": "OF49-01483", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Right Elevator Rig Boards", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Rudder Check Fixture", "partNumber": "CJMD8B27-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Rudder Check Fixture", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Drain Cup", "partNumber": "CJMD128-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Drain Cup", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Fuel Anti-Ice Concentration Kit", "partNumber": "HB-P-C B/2", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Fuel Anti-Ice Concentration Kit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Fuel Quantity (With Harness) Test Set", "partNumber": "6388012-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Fuel Quantity (With Harness) Test Set", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Hydraulic Manifold Breakout Box", "partNumber": "6388005-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Hydraulic Manifold Breakout Box", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Windshield Bleed Air Anti-Ice Test Tube", "partNumber": "CJMD130-100", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Windshield Bleed Air Anti-Ice Test Tube", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Windshield Alcohol Adjustment Kit", "partNumber": "CJMD8A30-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Windshield Alcohol Adjustment Kit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Nitrogen Charger Unit", "partNumber": "99-9003-1100", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Nitrogen Charger Unit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Landing Gear Squat Switch Breakout Box (525A)", "partNumber": "CJMD832-002", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Landing Gear Squat Switch Breakout Box (525A)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Landing Gear Squat Switch Breakout Box (525B)", "partNumber": "6388014-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Landing Gear Squat Switch Breakout Box (525B)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Main Landing Gear Trunnion Bearing Removal Tool", "partNumber": "CJMD832-006", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Main Landing Gear Trunnion Bearing Removal Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Main Landing Gear Trunnion Pin Bore Go Gauge", "partNumber": "CJMD832-007", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Main Landing Gear Trunnion Pin Bore Go Gauge", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Nose Gear Test Box", "partNumber": "CJMD8A32-004", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Nose Gear Test Box", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Main Gear Camber Adjustment Tool", "partNumber": "CJMD8A32-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Main Gear Camber Adjustment Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Main Gear Oleo Tool", "partNumber": "CJMD832-005", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Main Gear Oleo Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Nose Strut Ice Protection Boot", "partNumber": "CJMD232-005", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Nose Strut Ice Protection Boot", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Anti-Skid Test Set Adapter Cable (525A)", "partNumber": "99-791-573", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Anti-Skid Test Set Adapter Cable (525A)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Anti-Skid Test Set Adapter Cable (525B)", "partNumber": "99-791-581", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Anti-Skid Test Set Adapter Cable (525B)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Anti-Skid Test Set", "partNumber": "99-791", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Anti-Skid Test Set", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Rudder Pedal Torque Tool", "partNumber": "CJMD332-101", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Rudder Pedal Torque Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Wing Light Tool", "partNumber": "CJMD8A33-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Wing Light Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Portable Air Data Tester", "partNumber": "6520-10", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Portable Air Data Tester", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Portable Air Data Tester", "partNumber": "DPS-500", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Portable Air Data Tester", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Static Port Connectors", "partNumber": "33410FFAB-125-4", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Static Port Connectors", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Pitot Connectors", "partNumber": "P86892-4", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Pitot Connectors", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "AHRS Test Box", "partNumber": "CJMD8A34-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "AHRS Test Box", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Cleco Static Fittings", "partNumber": "CJMD234-104", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Cleco Static Fittings", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Angle-of-Attack Test Box", "partNumber": "CJMD234-105", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Angle-of-Attack Test Box", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Nose Landing Gear Test Box Assembly", "partNumber": "CJMD8A32-004", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Nose Landing Gear Test Box Assembly", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Gyro Tilt Table", "partNumber": "CJMD334-101", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Gyro Tilt Table", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "AHRS Mount", "partNumber": "822-1290-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "AHRS Mount", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Fuselage Vane Protractor", "partNumber": "1939-6", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Fuselage Vane Protractor", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "VG-14 Extender Cable", "partNumber": "CJMD834-002", "manufacturer": "N/A", "serialNumber": "N/A", "description": "VG-14 Extender Cable", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "J.E.T. Copilot's Attitude Indicator Extender Cable", "partNumber": "CJMD834-004", "manufacturer": "N/A", "serialNumber": "N/A", "description": "J.E.T. Copilot's Attitude Indicator Extender Cable", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "C-14D Extender Cable", "partNumber": "CJMD834-006", "manufacturer": "N/A", "serialNumber": "N/A", "description": "C-14D Extender Cable", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Charging Adapter", "partNumber": "Z1067", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Charging Adapter", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Pigtail", "partNumber": "173002", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Pigtail", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Tee Block and Gauge Assembly", "partNumber": "270017", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Tee Block and Gauge Assembly", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "High Pressure Hose Assembly", "partNumber": "173049-96", "manufacturer": "N/A", "serialNumber": "N/A", "description": "High Pressure Hose Assembly", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Charging (Long Tube Type Adapter)", "partNumber": "173387-14", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Charging (Long Tube Type Adapter)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Charging Adapter (Short Type)", "partNumber": "173778", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Charging Adapter (Short Type)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Control Surface Balance Fixture Kit", "partNumber": "5180002-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Control Surface Balance Fixture Kit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Lightning Diverter Strip Locating Tool", "partNumber": "CJMD853-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Lightning Diverter Strip Locating Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Windshield Scratch Removal Kit", "partNumber": "NC-78-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Windshield Scratch Removal Kit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Calibration Standard", "partNumber": "CJMD156-101", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Calibration Standard", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Dial Indicator Base Wing Refinishing Tool Kit", "partNumber": "CJMD820-001C", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Dial Indicator Base Wing Refinishing Tool Kit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Elliptical Cutter Wing Refinishing Tool Kit", "partNumber": "CJMD820-001B", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Elliptical Cutter Wing Refinishing Tool Kit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Engine Buildup Dolly", "partNumber": "08-2021-0000", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Engine Buildup Dolly", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Engine Lift Sling", "partNumber": "08-0119-8000", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Engine Lift Sling", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Bleed Air Cap Plate (For use on FJ44-2C engines)", "partNumber": "NK1008346-10", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Bleed Air Cap Plate (For use on FJ44-2C engines)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Bleed Air Cap Plate (For use on FJ44-3A engines)", "partNumber": "CJMD8B71-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Bleed Air Cap Plate (For use on FJ44-3A engines)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Throttle Switch Test Box", "partNumber": "6588002-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Throttle Switch Test Box", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-  { "name": "Thrust Attenuator Rig Tool", "partNumber": "CJMD8A78-001", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Thrust Attenuator Rig Tool", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" }
+  { "name": "Nose Jack", "model": "02-0517-0132", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Nose Jack", "calibrationStatus": "Good", "location": "BJC" },
+  { "name": "Wing Jack", "model": "02-0526-0100", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Wing Jack", "calibrationStatus": "Good", "location": "BJC" },
+  { "name": "Wing Jack", "model": "02-0526-C0110", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Wing Jack", "calibrationStatus": "Good", "location": "BJC" },
+  { "name": "Tail Stand", "model": "03-5815-0000", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Tail Stand", "calibrationStatus": "Good", "location": "BJC" },
+  { "name": "Nose Gear Jack Pad Kit", "model": "5520151-1", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Nose Gear Jack Pad Kit", "calibrationStatus": "Good", "location": "BJC" },
+  { "name": "Main Gear Jack Pad", "model": "R-1798", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Main Gear Jack Pad", "calibrationStatus": "Good", "location": "BJC" },
+  { "name": "Heavy Duty Tow Bar", "model": "01-1101-0000", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Heavy Duty Tow Bar", "calibrationStatus": "Good", "location": "BJC" },
+  { "name": "Tow Bar", "model": "01-1112-0000", "manufacturer": "N/A", "serialNumber": "N/A", "description": "Tow Bar", "calibrationStatus": "Good", "location": "BJC" }
 ];
-
-export const CESSNA_700_TOOLS: Tool[] = [
-    { "name": "main landing gear simulator test box", "partNumber": "8288001-1", "manufacturer": "Textron", "serialNumber": "N/A", "description": "main landing gear simulator test box", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "Nose gear simulator test box", "partNumber": "6988012-7", "manufacturer": "Textron", "serialNumber": "N/A", "description": "Nose gear simulator test box", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "pitot probe adapters", "partNumber": "P86892-4", "manufacturer": "NAV-AIDS", "serialNumber": "N/A", "description": "pitot probe adapters", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "Main gear jack pad", "partNumber": "R-3053", "manufacturer": "Tronair Inc.", "serialNumber": "N/A", "description": "Main gear jack pad", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "nose gear jack pad", "partNumber": "R-1808", "manufacturer": "Tronair Inc.", "serialNumber": "N/A", "description": "nose gear jack pad", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "PCB extender card", "partNumber": "PCB40, PCB60, or PCB92", "manufacturer": "Textron", "serialNumber": "N/A", "description": "PCB extender card", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "RTD Calibrator", "partNumber": "Fluke 712 RTD calibrator", "manufacturer": "Fluke", "serialNumber": "N/A", "description": "RTD Calibrator", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "wheel speed simulator", "partNumber": "CJMDU32-007A", "manufacturer": "Textron", "serialNumber": "N/A", "description": "wheel speed simulator", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "cessna longitude CMC viewer SD card", "partNumber": "8204541-X", "manufacturer": "Textron", "serialNumber": "N/A", "description": "cessna longitude CMC viewer SD card", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "oxygen flow meter test kit", "partNumber": "CJMDX35-001", "manufacturer": "Textron", "serialNumber": "N/A", "description": "oxygen flow meter test kit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "control wheel leveling bar", "partNumber": "CJMDS27-015", "manufacturer": "Textron", "serialNumber": "N/A", "description": "control wheel leveling bar", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "Micro-ohmmeter", "partNumber": "model 580", "manufacturer": "keithley instruments", "serialNumber": "N/A", "description": "Micro-ohmmeter", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "portable test set (ultrasonic)", "partNumber": "TS500", "manufacturer": "Dukane seacom inc.", "serialNumber": "N/A", "description": "portable test set (ultrasonic)", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "portable air data tester", "partNumber": "6520", "manufacturer": "Laversab", "serialNumber": "N/A", "description": "portable air data tester", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "EEI download kit", "partNumber": "5837831-4", "manufacturer": "Textron", "serialNumber": "N/A", "description": "EEI download kit", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "Main Landing gear jack", "partNumber": "02-7815C0110", "manufacturer": "Tronair", "serialNumber": "N/A", "description": "Main Landing gear jack", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "static port connectors", "partNumber": "33410FFAB-125-4", "manufacturer": "Nav-Aids", "serialNumber": "N/A", "description": "static port connectors", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-    { "name": "TCAS/DME Tester", "partNumber": "IFR 6000", "manufacturer": "N/A", "serialNumber": "N/A", "description": "TCAS/DME Tester", "model": "N/A", "calibrationStatus": "Good", "location": "BJC" },
-];
-
 
 export const PRELOADED_AIRCRAFT_DATA: AircraftData[] = [
     {
-        id: 'proj-1721648833000-cessna525',
-        name: 'Cessna 525 (Sample)',
-        createdAt: new Date('2024-07-22T12:00:00.000Z').toISOString(),
-        toolLists: [
-            {
-                id: 'list-1721648833001-master',
-                name: 'Cessna 525 Master Tooling List',
-                maintenanceEvent: 'General Maintenance',
-                tools: CESSNA_525_TOOLS,
-                createdAt: new Date('2024-07-22T12:00:00.000Z').toISOString(),
-            }
-        ],
-        comparisons: [],
-    },
-    {
-        id: 'ac-1721700000000-cessna700',
-        name: 'Cessna 700 Longitude',
+        id: 'ac-1',
+        name: 'N525AB - Citation Jet',
         createdAt: new Date().toISOString(),
         toolLists: [
             {
-                id: 'list-1721700000001-slc01060',
-                name: 'WO: SLC01060 Tooling',
-                maintenanceEvent: 'SLC01060',
-                tools: CESSNA_700_TOOLS,
-                createdAt: new Date().toISOString(),
+                id: 'list-1',
+                name: '500-Hour Inspection',
+                maintenanceEvent: '500-Hour Inspection',
+                tools: CESSNA_525_TOOLS,
+                createdAt: new Date().toISOString()
             }
         ],
-        comparisons: [],
+        comparisons: []
     }
 ];

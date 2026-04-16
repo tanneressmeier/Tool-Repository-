@@ -15,8 +15,8 @@ const ShortageReportModal: React.FC<ShortageReportModalProps> = ({ isOpen, onClo
   useEffect(() => {
     if (isOpen) {
       // Select all tools by default when the modal opens or tools change
-      const allToolPartNumbers = new Set(tools.map(t => t.partNumber + t.name));
-      setSelectedTools(allToolPartNumbers);
+      const allToolIdentifiers = new Set(tools.map(t => t.model + t.name));
+      setSelectedTools(allToolIdentifiers);
       // Trigger animation
       requestAnimationFrame(() => setShow(true));
     }
@@ -35,7 +35,7 @@ const ShortageReportModal: React.FC<ShortageReportModalProps> = ({ isOpen, onClo
 
   const handleSelectAll = (isChecked: boolean) => {
     if (isChecked) {
-      setSelectedTools(new Set(tools.map(t => t.partNumber + t.name)));
+      setSelectedTools(new Set(tools.map(t => t.model + t.name)));
     } else {
       setSelectedTools(new Set());
     }
@@ -52,16 +52,16 @@ const ShortageReportModal: React.FC<ShortageReportModalProps> = ({ isOpen, onClo
   };
   
   const getSelectedTools = () => {
-    return tools.filter(t => selectedTools.has(t.partNumber + t.name));
+    return tools.filter(t => selectedTools.has(t.model + t.name));
   };
 
   const handleExportCsv = () => {
     const selected = getSelectedTools();
     if (selected.length === 0) return;
 
-    const headers = 'Tool Name,Manufacturer,Part Number';
+    const headers = 'Tool Name,Manufacturer,Model';
     const csvRows = selected.map(t =>
-      `"${t.name.replace(/"/g, '""')}","${t.manufacturer.replace(/"/g, '""')}","${t.partNumber.replace(/"/g, '""')}"`
+      `"${t.name.replace(/"/g, '""')}","${t.manufacturer.replace(/"/g, '""')}","${t.model.replace(/"/g, '""')}"`
     );
     const csvContent = `${headers}\n${csvRows.join('\n')}`;
 
@@ -81,8 +81,8 @@ const ShortageReportModal: React.FC<ShortageReportModalProps> = ({ isOpen, onClo
     const selected = getSelectedTools();
     if (selected.length === 0) return;
 
-    const textContent = selected.map(t => `${t.name}\t${t.manufacturer}\t${t.partNumber}`).join('\n');
-    navigator.clipboard.writeText(`Tool Name\tManufacturer\tPart Number\n${textContent}`).then(() => {
+    const textContent = selected.map(t => `${t.name}\t${t.manufacturer}\t${t.model}`).join('\n');
+    navigator.clipboard.writeText(`Tool Name\tManufacturer\tModel\n${textContent}`).then(() => {
       setCopyStatus('Copied!');
       setTimeout(() => setCopyStatus('Copy to Clipboard'), 2000);
     }, (err) => {
@@ -102,9 +102,9 @@ const ShortageReportModal: React.FC<ShortageReportModalProps> = ({ isOpen, onClo
       printWindow.document.write('<style>body{font-family: Arial, sans-serif; margin: 20px;} h1{text-align: center; color: #333;} table{width: 100%; border-collapse: collapse; margin-top: 20px;} th, td{border: 1px solid #ddd; padding: 10px; text-align: left;} th{background-color: #f2f2f2;}</style>');
       printWindow.document.write('</head><body>');
       printWindow.document.write('<h1>Shortage Report</h1>');
-      printWindow.document.write('<table><thead><tr><th>Tool Name</th><th>Manufacturer</th><th>Part Number</th></tr></thead><tbody>');
+      printWindow.document.write('<table><thead><tr><th>Tool Name</th><th>Manufacturer</th><th>Model</th></tr></thead><tbody>');
       selected.forEach(t => {
-        printWindow.document.write(`<tr><td>${t.name}</td><td>${t.manufacturer}</td><td>${t.partNumber}</td></tr>`);
+        printWindow.document.write(`<tr><td>${t.name}</td><td>${t.manufacturer}</td><td>${t.model}</td></tr>`);
       });
       printWindow.document.write('</tbody></table>');
       printWindow.document.write('</body></html>');
@@ -150,7 +150,7 @@ const ShortageReportModal: React.FC<ShortageReportModalProps> = ({ isOpen, onClo
           </div>
           <ul className="space-y-2">
             {tools.map((tool, index) => {
-              const toolIdentifier = tool.partNumber + tool.name;
+              const toolIdentifier = tool.model + tool.name;
               return (
               <li key={index} className="bg-gray-900/50 rounded-lg p-3 flex items-center">
                 <input
@@ -163,7 +163,7 @@ const ShortageReportModal: React.FC<ShortageReportModalProps> = ({ isOpen, onClo
                 <label htmlFor={`tool-${index}`} className="ml-4 flex-grow cursor-pointer">
                   <p className="font-medium text-gray-200">{tool.name}</p>
                   <p className="text-sm text-gray-400">
-                    {tool.manufacturer !== 'N/A' && `${tool.manufacturer} | `}P/N: {tool.partNumber}
+                    {tool.manufacturer !== 'N/A' && `${tool.manufacturer} | `}Model: {tool.model}
                   </p>
                 </label>
               </li>

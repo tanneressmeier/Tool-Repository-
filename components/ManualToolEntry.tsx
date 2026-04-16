@@ -1,7 +1,7 @@
 import React, { useState, forwardRef, useRef, useImperativeHandle } from 'react';
 
 interface ManualToolEntryProps {
-  onAddTool: (tool: { name: string; manufacturer: string; partNumber: string; }) => void;
+  onAddTool: (tool: { name: string; manufacturer: string; model: string; }) => void;
 }
 
 export interface ManualToolEntryRef {
@@ -12,7 +12,7 @@ export interface ManualToolEntryRef {
 const ManualToolEntry = forwardRef<ManualToolEntryRef, ManualToolEntryProps>(({ onAddTool }, ref) => {
   const [name, setName] = useState('');
   const [manufacturer, setManufacturer] = useState('');
-  const [partNumber, setPartNumber] = useState('');
+  const [model, setModel] = useState('');
   
   const containerRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -28,18 +28,18 @@ const ManualToolEntry = forwardRef<ManualToolEntryRef, ManualToolEntryProps>(({ 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !partNumber.trim()) {
+    if (!name.trim() || !model.trim()) {
       return;
     }
     onAddTool({
       name: name.trim(),
       manufacturer: manufacturer.trim() || 'N/A',
-      partNumber: partNumber.trim(),
+      model: model.trim(),
     });
     // Clear form and refocus for quick entry
     setName('');
     setManufacturer('');
-    setPartNumber('');
+    setModel('');
     nameInputRef.current?.focus();
   };
 
@@ -63,14 +63,14 @@ const ManualToolEntry = forwardRef<ManualToolEntryRef, ManualToolEntryProps>(({ 
           />
         </div>
         <div>
-          <label htmlFor="tool-part-number" className="block text-sm font-medium text-gray-300 mb-1">
-            Part Number <span className="text-red-400">*</span>
+          <label htmlFor="tool-model" className="block text-sm font-medium text-gray-300 mb-1">
+            Model / Part Number <span className="text-red-400">*</span>
           </label>
           <input
-            id="tool-part-number"
+            id="tool-model"
             type="text"
-            value={partNumber}
-            onChange={(e) => setPartNumber(e.target.value)}
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
             required
             className="block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm"
             placeholder="e.g., 02-0526-0110"
@@ -92,7 +92,7 @@ const ManualToolEntry = forwardRef<ManualToolEntryRef, ManualToolEntryProps>(({ 
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={!name.trim() || !partNumber.trim()}
+            disabled={!name.trim() || !model.trim()}
             className="bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-500 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
           >
             Add Tool

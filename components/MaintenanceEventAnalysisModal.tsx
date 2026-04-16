@@ -66,8 +66,9 @@ const MaintenanceEventAnalysisModal: React.FC<MaintenanceEventAnalysisModalProps
                       <p className="text-sm font-medium text-gray-400 mb-1">Required Tools:</p>
                       <ul className="space-y-1 pl-4">
                         {item.tools.map(tool => (
-                          <li key={tool.partNumber} className="text-sm text-gray-300">
-                            - {tool.name} <span className="text-gray-500">(P/N: {tool.partNumber})</span>
+                          // FIX: Property 'partNumber' does not exist on type 'Tool'.
+                          <li key={tool.model} className="text-sm text-gray-300">
+                            - {tool.name} <span className="text-gray-500">(P/N: {tool.model})</span>
                           </li>
                         ))}
                       </ul>

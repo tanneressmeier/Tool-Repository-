@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useMemo } from 'react';
 import type { Tool } from '../types';
 import { ShoppingCartIcon } from './icons/ShoppingCartIcon';
@@ -14,6 +15,8 @@ interface InventoryCardProps {
   onFindSourcing?: (tool: Tool) => void;
   isNeededToolsList?: boolean;
   onFocusManualEntry?: () => void;
+  // New prop for handling drops
+  onToolDrop?: (tool: Tool, sourceStatus: string, targetStatus: string) => void;
 }
 
 const statusStyles = {
@@ -63,17 +66,18 @@ const EmptyListIcon: React.FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 
-const InventoryCard: React.FC<InventoryCardProps> = ({ title, tools, status, onImport, isImporting, onExport, onSave, onLoadKit, onFindSourcing, isNeededToolsList, onFocusManualEntry }) => {
+const InventoryCard: React.FC<InventoryCardProps> = ({ title, tools, status, onImport, isImporting, onExport, onSave, onLoadKit, onFindSourcing, isNeededToolsList, onFocusManualEntry, onToolDrop }) => {
   const styles = statusStyles[status];
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const COLLAPSE_THRESHOLD = 10;
   const isCollapsible = isNeededToolsList && tools.length > COLLAPSE_THRESHOLD;
 
   const groupedTools = useMemo(() => {
     // Grouping only applies to "Needed Tools" list when categories are present
-    if (status !== 'master' || !tools.every(t => t.category)) {
+    if (status !== 'master' || !tools.some(t => t.category)) {
       return { 'All Tools': tools };
     }
     
@@ -106,6 +110,43 @@ const InventoryCard: React.FC<InventoryCardProps> = ({ title, tools, status, onI
     }
   };
 
+  // --- Drag and Drop Handlers ---
+  const handleDragStart = (e: React.DragEvent, tool: Tool) => {
+      if (!onToolDrop) return; // Only allow drag if drops are handled
+      // We serialize the tool and its source status
+      e.dataTransfer.setData('application/json', JSON.stringify({ tool, sourceStatus: status }));
+      e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+      if (!onToolDrop) return;
+      e.preventDefault(); // Necessary to allow dropping
+      e.dataTransfer.dropEffect = 'move';
+      setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+      setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+      if (!onToolDrop) return;
+      e.preventDefault();
+      setIsDragOver(false);
+
+      try {
+          const data = e.dataTransfer.getData('application/json');
+          const { tool, sourceStatus } = JSON.parse(data);
+
+          // Only process if the source status is different from the current card status
+          if (sourceStatus !== status) {
+              onToolDrop(tool, sourceStatus, status);
+          }
+      } catch (err) {
+          console.error("Failed to process drop", err);
+      }
+  };
+
   const getIcon = () => {
     switch (status) {
       case 'available': return <CheckIcon className={styles.listIcon} />;
@@ -127,9 +168,11 @@ const InventoryCard: React.FC<InventoryCardProps> = ({ title, tools, status, onI
 
   const renderToolItem = (tool: Tool, index: number) => (
     <li 
-      key={`${tool.partNumber}-${tool.serialNumber}-${index}`}
-      className="bg-gray-900/40 p-3 rounded-lg animate-fade-in"
+      key={`${tool.model}-${tool.serialNumber}-${index}`}
+      className={`bg-gray-900/40 p-3 rounded-lg animate-fade-in ${onToolDrop ? 'cursor-grab active:cursor-grabbing hover:bg-gray-800/60' : ''}`}
       style={{ animationDelay: `${Math.min(index * 20, 300)}ms`, opacity: 0 }}
+      draggable={!!onToolDrop}
+      onDragStart={(e) => handleDragStart(e, tool)}
     >
       <div className="flex items-start gap-3">
         <span className="flex-shrink-0 mt-1">{getIcon()}</span>
@@ -139,7 +182,6 @@ const InventoryCard: React.FC<InventoryCardProps> = ({ title, tools, status, onI
           </div>
           <div className="text-xs text-gray-400 mt-1">
             <Detail label="Mfg" value={tool.manufacturer} />
-            <Detail label="P/N" value={tool.partNumber} />
             <Detail label="Model" value={tool.model} />
             { status !== 'shortage' && status !== 'onOrder' && <Detail label="S/N" value={tool.serialNumber} /> }
           </div>
@@ -193,7 +235,12 @@ const InventoryCard: React.FC<InventoryCardProps> = ({ title, tools, status, onI
   );
 
   return (
-    <div className={`relative p-5 rounded-xl shadow-md border h-full flex flex-col ${styles.bg}`}>
+    <div 
+        className={`relative p-5 rounded-xl shadow-md border h-full flex flex-col transition-colors duration-200 ${styles.bg} ${isDragOver ? 'border-dashed border-2 border-cyan-400 bg-gray-800/80' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+    >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h3 className={`text-xl font-bold ${styles.titleColor}`}>{title}</h3>
         <div className="flex items-center gap-2">
@@ -249,7 +296,17 @@ const InventoryCard: React.FC<InventoryCardProps> = ({ title, tools, status, onI
               <p className="text-white animate-pulse">Processing with AI...</p>
           </div>
       )}
-      <div className="flex-grow min-h-0 overflow-y-auto pr-2">
+      
+      {/* Drag Hint - Only show if this card supports drops and is not being hovered */}
+      {onToolDrop && !isDragOver && tools.length === 0 && !isNeededToolsList && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30 top-16">
+              <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-600 p-6 rounded-lg">
+                  <p className="text-gray-400 font-medium">Drag tools here</p>
+              </div>
+          </div>
+      )}
+
+      <div className="flex-grow min-h-0 overflow-y-auto pr-2 z-10">
         {tools.length > 0 ? (
           <div className={`space-y-2 ${isCollapsible && !isExpanded ? 'max-h-[500px] overflow-y-auto' : ''}`}>
             {Object.entries(groupedTools).map(([category, toolList], groupIndex) => (
@@ -258,13 +315,13 @@ const InventoryCard: React.FC<InventoryCardProps> = ({ title, tools, status, onI
                    <h4 className="font-semibold text-cyan-400 text-sm mt-4 mb-2 sticky top-0 bg-gray-800/80 backdrop-blur-sm py-1 px-1 rounded-md">{category}</h4>
                 )}
                 <ul className="space-y-2">
-                  {toolList.map((tool, index) => renderToolItem(tool, index))}
+                  {Array.isArray(toolList) && toolList.map((tool, index) => renderToolItem(tool, index))}
                 </ul>
               </div>
             ))}
           </div>
         ) : (
-          isImporting ? null : (isNeededToolsList ? <NeededToolsEmptyState /> : <p className="text-gray-500 italic p-4 text-center">No tools to display.</p>)
+          isImporting ? null : (isNeededToolsList ? <NeededToolsEmptyState /> : null)
         )}
       </div>
       {isCollapsible && (

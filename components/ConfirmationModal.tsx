@@ -6,9 +6,19 @@ interface ConfirmationModalProps {
   onConfirm: () => void;
   title: string;
   message: React.ReactNode;
+  confirmText?: string;
+  confirmVariant?: 'danger' | 'primary';
 }
 
-const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, onConfirm, title, message }) => {
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  title, 
+  message, 
+  confirmText = 'Confirm', 
+  confirmVariant = 'primary' 
+}) => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -30,6 +40,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, 
   if (!isOpen) {
     return null;
   }
+
+  const confirmButtonClasses = {
+    danger: 'bg-red-600 hover:bg-red-500',
+    primary: 'bg-cyan-600 hover:bg-cyan-500',
+  };
 
   return (
     <div 
@@ -60,9 +75,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, 
           </button>
           <button 
             onClick={handleConfirm} 
-            className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-500 transition-colors"
+            className={`${confirmButtonClasses[confirmVariant]} text-white font-bold py-2 px-4 rounded-lg transition-colors`}
           >
-            Confirm Delete
+            {confirmText}
           </button>
         </footer>
       </div>

@@ -137,7 +137,7 @@ const SourcingInfoModal: React.FC<SourcingInfoModalProps> = ({ isOpen, onClose, 
                 <header className="flex-shrink-0 p-5 border-b border-gray-700">
                     <h2 id="modal-title" className="text-xl font-bold text-white">Sourcing Details</h2>
                     {tool && (
-                        <p className="text-sm text-gray-400 mt-1">{tool.name} | P/N: {tool.partNumber}</p>
+                        <p className="text-sm text-gray-400 mt-1">{tool.name} | Model: {tool.model}</p>
                     )}
                 </header>
 

@@ -1,20 +1,29 @@
+
 export interface Tool {
   toolId?: string;
   name: string;
   description?: string;
   manufacturer: string;
-  model?: string;
-  partNumber: string;
+  model: string;
   serialNumber: string;
   calibrationStatus?: string;
   calibrationDueDays?: number;
   location?: string;
   category?: string;
+  
+  // New fields for ownership and cost
+  owner?: string;
+  toolCost?: string;
+
   // Fields for On-Order tools from purchasing plan
   quantity?: string;
   unitPrice?: string;
   totalPrice?: string;
   sourcingLink?: string;
+  status?: string;
+
+  // Analysis
+  costAnalysis?: CostAnalysis;
 }
 
 export interface SuggestedSubstitution {
@@ -105,4 +114,39 @@ export interface PurchasePlanItem {
   status: string;
   notes: string;
   received?: boolean;
+  tlNumber?: string;
+}
+
+export interface CostAnalysisSource {
+    sourceName: string;
+    price: string;
+    url: string;
+}
+
+export interface CostAnalysis {
+    averageCost: string;
+    notes: string;
+    sources: CostAnalysisSource[];
+}
+
+// New Types for Sale Finder
+export interface SaleItem {
+    id: string;
+    name: string;
+    model: string;
+    manufacturer: string;
+    price: string;
+    condition: string;
+    sellerNotes: string;
+}
+
+export interface SaleMatch {
+    saleItem: SaleItem;
+    matchType: 'Purchase Plan' | 'Needed Tool' | 'Inventory Duplicate';
+    matchConfidence: 'High' | 'Medium';
+    matchedWith: {
+        name: string;
+        model: string;
+        sourceContext: string; // e.g., "Citation X Annual List" or "Purchase Plan Row 5"
+    }[];
 }

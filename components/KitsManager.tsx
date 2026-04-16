@@ -39,7 +39,8 @@ const KitsManager: React.FC<KitsManagerProps> = ({ kits, masterInventory, onKits
         return masterInventory.filter(tool =>
             tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             tool.manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            tool.partNumber.toLowerCase().includes(searchTerm.toLowerCase())
+            // FIX: Property 'partNumber' does not exist on type 'Tool'.
+            tool.model.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [masterInventory, searchTerm]);
 
@@ -117,7 +118,8 @@ const KitsManager: React.FC<KitsManagerProps> = ({ kits, masterInventory, onKits
                                     <li key={tool.serialNumber} className="flex justify-between items-center bg-gray-800 p-2 rounded">
                                         <div>
                                             <p className="font-medium text-gray-200 text-sm">{tool.name}</p>
-                                            <p className="text-xs text-gray-400">{tool.partNumber}</p>
+                                            {/* FIX: Property 'partNumber' does not exist on type 'Tool'. */}
+                                            <p className="text-xs text-gray-400">{tool.model}</p>
                                         </div>
                                         <button onClick={() => handleRemoveToolFromKit(tool.serialNumber)} className="text-red-400 hover:text-red-300 text-xs font-semibold">Remove</button>
                                     </li>
@@ -143,7 +145,8 @@ const KitsManager: React.FC<KitsManagerProps> = ({ kits, masterInventory, onKits
                                     <li key={tool.serialNumber} className="flex justify-between items-center bg-gray-800 p-2 rounded">
                                         <div>
                                             <p className="font-medium text-gray-200 text-sm">{tool.name}</p>
-                                            <p className="text-xs text-gray-400">{tool.partNumber}</p>
+                                            {/* FIX: Property 'partNumber' does not exist on type 'Tool'. */}
+                                            <p className="text-xs text-gray-400">{tool.model}</p>
                                         </div>
                                         <button 
                                             onClick={() => handleAddToolToKit(tool)} 

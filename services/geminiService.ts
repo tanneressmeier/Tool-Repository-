@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
-import type { ComparisonResult, Tool, SourcingInfo, SuggestedSubstitution, PurchasePlanItem, MaintenanceTask } from '../types';
+import type { ComparisonResult, Tool, SourcingInfo, SuggestedSubstitution, PurchasePlanItem, MaintenanceTask, SaleItem } from '../types';
 
 let ai: GoogleGenAI | null = null;
 
@@ -79,14 +80,13 @@ const toolSchema = {
     name: { type: Type.STRING, description: "The primary name of the tool, from the 'Description' column in the CSV." },
     description: { type: Type.STRING, description: "A brief description from the 'Details' column. If 'Details' is empty, use the value from 'Description'. Use 'N/A' if not provided." },
     manufacturer: { type: Type.STRING, description: "The manufacturer of the tool, from the 'Make' column. Use 'N/A' if not provided or unknown." },
-    model: { type: Type.STRING, description: "The model of the tool. Should be 'N/A'." },
-    partNumber: { type: Type.STRING, description: "The part number of the tool, from the 'Model' column in the CSV. Use 'N/A' if not provided or unknown." },
+    model: { type: Type.STRING, description: "The model or part number of the tool, from the 'Model' column in the CSV. Use 'N/A' if not provided or unknown." },
     serialNumber: { type: Type.STRING, description: "The serial number of the tool, from the 'Serial' column. Should be 'N/A' if not applicable." },
     calibrationStatus: { type: Type.STRING, description: "The derived calibration status ('Good', 'Needs Calibration', 'N/A')." },
     calibrationDueDays: { type: Type.NUMBER, description: "Days until calibration is due, from 'CalibrationDueDays' column. Can be null." },
     location: { type: Type.STRING, description: "The location code of the tool, extracted from the 'ToolRoom' column (e.g. 'BJC')." },
   },
-  required: ['toolId', 'name', 'manufacturer', 'partNumber', 'serialNumber'],
+  required: ['toolId', 'name', 'manufacturer', 'model', 'serialNumber'],
 };
 
 const substitutionSchema = {
@@ -132,18 +132,17 @@ export async function processCsvInventory(csvContent: string): Promise<Tool[]> {
   - 'Description' column (e.g., "Citation X Door Purge") maps to 'name'.
   - 'Details' column maps to 'description'. If 'Details' is empty, use the value from 'Description'.
   - 'Make' column maps to 'manufacturer'.
-  - 'Model' column maps to 'partNumber'.
+  - 'Model' column maps to 'model' (this represents the part number).
   - 'Serial' column maps to 'serialNumber'.
   - 'ToolRoom' column (e.g., "BJC Tool Room") maps to 'location'. Extract just the location code (e.g., "BJC").
   - 'CalibrationDueDays' column maps to 'calibrationDueDays'.
-  - The 'model' field in the JSON should be set to "N/A".
 
   **Instructions:**
   1.  Identify the header row and map columns to the correct fields as specified above.
   2.  For each data row, create a JSON object.
   3.  Handle missing or ambiguous values by using the string "N/A" for string fields and null for number fields. This includes empty cells.
   4.  Derive 'calibrationStatus' from 'CalibrationDueDays'. If 'CalibrationDueDays' > 0, status is 'Good'. If 'CalibrationDueDays' <= 0, status is 'Needs Calibration'. If 'CalibrationDueDays' is empty or not a number, status is 'N/A'.
-  5.  Clean the data: trim all whitespace. Standardize Part Numbers to be uppercase. Use Title Case for names and manufacturers.
+  5.  Clean the data: trim all whitespace. Standardize Models/Part Numbers to be uppercase. Use Title Case for names and manufacturers.
   6.  If multiple rows have the exact same non-'N/A' serial number, process only the first one you encounter and ignore the duplicates.
   7.  Sort the final list of objects alphabetically by the 'name' field.
   
@@ -185,14 +184,14 @@ export async function processNeededToolsCsv(csvContent: string): Promise<Tool[]>
   
   const prompt = `You are an inventory data processing expert. Your task is to analyze the following text from a CSV file listing required tools and extract a clean list of tool objects. The list may contain other data, but you must only extract the tool information.
 
-  The CSV should contain at least a Tool Name and a Part Number. Manufacturer is optional.
+  The CSV should contain at least a Tool Name and a Part Number/Model. Manufacturer is optional.
 
   **Instructions:**
   1.  Identify and extract data for each tool. Ignore header rows.
-  2.  For each tool, create a JSON object with keys: "name", "manufacturer", "partNumber".
+  2.  For each tool, create a JSON object with keys: "name", "manufacturer", "model". The part number from the CSV should be mapped to the "model" field.
   3.  For the "serialNumber" field, always use the string "N/A" for these needed tool lists.
   4.  Handle missing or empty values for 'manufacturer' gracefully by using the string "N/A".
-  5.  Clean the data: trim whitespace, and standardize Part Numbers to be uppercase.
+  5.  Clean the data: trim whitespace, and standardize Models/Part Numbers to be uppercase.
   
   **CRITICAL OUTPUT FORMAT:**
   Your response MUST be ONLY a single, raw JSON object that strictly matches the provided schema. Do not include any markdown (like \`\`\`json), text, greetings, or explanations.
@@ -228,13 +227,20 @@ export async function processNeededToolsCsv(csvContent: string): Promise<Tool[]>
 }
 
 export async function compareInventories(masterInventory: Tool[], neededTools: Tool[], purchasePlan: PurchasePlanItem[]): Promise<ComparisonResult> {
-  const masterPartNumberMap = new Map<string, Tool>();
+  const normalize = (s: string) => s.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+  // Aggregate master inventory by normalized model to handle multiple locations
+  const masterModelMap = new Map<string, Tool[]>();
   masterInventory.forEach(tool => {
-    if (tool.partNumber && tool.partNumber !== 'N/A') {
-      const partNumbers = tool.partNumber.split(',').map(pn => pn.trim().toUpperCase());
-      partNumbers.forEach(pn => {
-        if (pn) {
-            masterPartNumberMap.set(pn, tool);
+    if (tool.model && tool.model !== 'N/A') {
+      const models = tool.model.split(',').map(pn => pn.trim());
+      models.forEach(m => {
+        if (m) {
+            const key = normalize(m);
+            if (!masterModelMap.has(key)) {
+                masterModelMap.set(key, []);
+            }
+            masterModelMap.get(key)!.push(tool);
         }
       });
     }
@@ -242,52 +248,80 @@ export async function compareInventories(masterInventory: Tool[], neededTools: T
   
   const purchasePlanMap = new Map<string, PurchasePlanItem>();
     purchasePlan.forEach(item => {
-        const partNumber = item.partNumber.split('(')[0].trim().toUpperCase();
+        const partNumber = item.partNumber.split('(')[0].trim();
         if (partNumber) {
-            purchasePlanMap.set(partNumber, item);
+            purchasePlanMap.set(normalize(partNumber), item);
         }
     });
 
   const available: Tool[] = [];
   const onOrder: Tool[] = [];
   const shortage: Tool[] = [];
-  const neededToolsMap = new Map<string, Tool>();
+  
+  // Track processed to avoid duplicates
+  const processedNeeded = new Set<string>();
 
   neededTools.forEach(tool => {
-      const partNumber = (tool.partNumber?.split('(')[0] || '').trim().toUpperCase();
-      if (partNumber && partNumber !== 'N/A') {
-          if (!neededToolsMap.has(partNumber)) {
-              neededToolsMap.set(partNumber, tool);
-          }
-      } else {
+      const rawModel = (tool.model?.split('(')[0] || '').trim();
+      const modelKey = normalize(rawModel);
+
+      // Handle items with no model (name match fallback)
+      if (!modelKey) {
           const existing = masterInventory.find(t => t.name.toLowerCase() === tool.name.toLowerCase());
           if (existing) {
-              available.push(existing);
+              const loc = existing.location === 'ToolRoom' ? 'BJC' : (existing.location || 'Unknown');
+              available.push({ ...existing, location: loc });
           } else {
               shortage.push(tool);
           }
+          return;
       }
-  });
 
-  for (const [partNumber, tool] of neededToolsMap.entries()) {
-      if (masterPartNumberMap.has(partNumber)) {
-          available.push(masterPartNumberMap.get(partNumber)!);
-      } else if (purchasePlanMap.has(partNumber)) {
-           const purchaseItem = purchasePlanMap.get(partNumber)!;
+      if (processedNeeded.has(modelKey)) return;
+      processedNeeded.add(modelKey);
+
+      if (masterModelMap.has(modelKey)) {
+          const matches = masterModelMap.get(modelKey)!;
+          
+          // Aggregate Locations
+          const uniqueLocations = Array.from(new Set(matches.map(t => {
+              let loc = t.location || 'Unknown';
+              if (loc === 'ToolRoom') loc = 'BJC'; // Normalize BJC location name
+              return loc;
+          }).filter(l => l && l !== 'N/A'))).sort();
+          
+          const combinedLocation = uniqueLocations.length > 0 ? uniqueLocations.join(' & ') : 'Unknown';
+          
+          // Determine best calibration status
+          let bestCal = 'N/A';
+          if (matches.some(t => t.calibrationStatus === 'Good')) bestCal = 'Good';
+          else if (matches.some(t => t.calibrationStatus === 'Needs Calibration')) bestCal = 'Needs Calibration';
+
+          available.push({
+              ...matches[0], // Use metadata from first match
+              location: combinedLocation,
+              calibrationStatus: bestCal,
+              quantity: matches.length.toString()
+          });
+      } else if (purchasePlanMap.has(modelKey)) {
+           const purchaseItem = purchasePlanMap.get(modelKey)!;
             const onOrderTool: Tool = {
                 ...tool,
                 name: purchaseItem.name,
                 manufacturer: purchaseItem.manufacturer,
+                model: purchaseItem.partNumber,
                 quantity: purchaseItem.quantity,
                 unitPrice: purchaseItem.unitPrice,
                 totalPrice: purchaseItem.totalPrice,
                 sourcingLink: purchaseItem.sourcingLink,
+                status: purchaseItem.status,
+                category: purchaseItem.itemType,
             };
             onOrder.push(onOrderTool);
       } else {
           shortage.push(tool);
       }
-  }
+  });
 
   const suggestedSubstitutions = await findSubstitutions(shortage, masterInventory);
 
@@ -327,11 +361,11 @@ async function findSubstitutions(shortage: Tool[], masterInventory: Tool[]): Pro
 
   **Goal: Suggest Substitutions**
   1.  For each tool in 'SHORTAGE TOOLS', search the 'RELEVANT MASTER INVENTORY' to find a suitable substitute.
-  2.  A good substitute has similar functionality. Pay close attention to part numbers.
-      -   **High Confidence:** Part numbers are nearly identical, differing only by a suffix, prefix, or minor revision (e.g., 'CJMD8A27-003' vs 'CJMD8A27-004', '02-0526-0100' vs '02-0526-C0110').
-      -   **Medium Confidence:** Names are very similar (e.g., 'Nose Jack' vs 'Nose Gear Jack') and manufacturers match, but part numbers differ.
+  2.  A good substitute has similar functionality. Pay close attention to model/part numbers.
+      -   **High Confidence:** Model numbers are nearly identical, differing only by a suffix, prefix, or minor revision (e.g., 'CJMD8A27-003' vs 'CJMD8A27-004', '02-0526-0100' vs '02-0526-C0110').
+      -   **Medium Confidence:** Names are very similar (e.g., 'Nose Jack' vs 'Nose Gear Jack') and manufacturers match, but model numbers differ.
       -   **Low Confidence:** Names are similar, but manufacturers are different.
-  3.  For each valid substitution you identify, provide a clear 'reason'. Examples: "Superseded part number.", "Alternative part number for the same tool.", "Functionally equivalent jack from same manufacturer."
+  3.  For each valid substitution you identify, provide a clear 'reason'. Examples: "Superseded part number.", "Alternative model for the same tool.", "Functionally equivalent jack from same manufacturer."
   4.  If no suitable substitute exists for a tool, DO NOT include it in the results.
   
   **CRITICAL OUTPUT FORMAT:**
@@ -380,7 +414,7 @@ export async function getToolSourcingInfo(tool: Tool): Promise<SourcingInfo> {
     **Tool to Source:**
     - Name: "${tool.name}"
     - Manufacturer: "${tool.manufacturer}"
-    - Part Number: "${tool.partNumber}"
+    - Model/Part Number: "${tool.model}"
 
     **Instructions:**
     1.  **Prioritize Official Sources:** First, search for verified aviation distributors (e.g., Tronair, Textron Aviation Parts, Aircraft Spruce, SkyGeek, PilotJohn, AeroVal) or major electronics suppliers (e.g., Mouser, Digi-Key).
@@ -388,7 +422,7 @@ export async function getToolSourcingInfo(tool: Tool): Promise<SourcingInfo> {
     3.  **Find Purchase Links:** Find up to THREE direct, working links to product pages where this tool can be purchased. For each, provide the 'url', 'sourceName', and current 'availability' (e.g., "In Stock", "Backordered", "Lead time: 2-3 weeks", "Check Website"). If no links are found, return an empty array.
     4.  **Find Rental Links:** Find up to TWO direct, working links where this tool can be rented. If none are found, return an empty array.
     5.  **Add Notes:** Provide brief, helpful "sourcingNotes". Mention if it's a legacy part, has been superseded by a new part number, or requires a special quote.
-    6.  **Confidence Score:** Provide a 'confidence' level ('High', 'Medium', 'Low') based on how certain you are that the found links and prices are for the exact part number specified. 'High' confidence requires a direct match on a reputable distributor's site.
+    6.  **Confidence Score:** Provide a 'confidence' level ('High', 'Medium', 'Low') based on how certain you are that the found links and prices are for the exact model/part number specified. 'High' confidence requires a direct match on a reputable distributor's site.
     
     **CRITICAL OUTPUT FORMAT:**
     - Your entire response MUST be a single, raw JSON object without any markdown formatting (like \`\`\`json\`), comments, or other text.
@@ -456,9 +490,9 @@ export async function queryInventory(query: string, inventory: Tool[]): Promise<
   const prompt = `You are a sophisticated database query engine that understands natural language. Your task is to analyze a user's query and filter a master list of tools provided as a JSON array.
 
   **Instructions:**
-  1.  Carefully read the user's query to understand their intent. The query may involve tool names, manufacturers, part numbers, or descriptive characteristics (e.g., "jacks under 10 tons", "all Tronair towbars", "battery chargers").
+  1.  Carefully read the user's query to understand their intent. The query may involve tool names, manufacturers, model/part numbers, or descriptive characteristics (e.g., "jacks under 10 tons", "all Tronair towbars", "battery chargers").
   2.  Scan the entire 'MASTER TOOL INVENTORY' provided below.
-  3.  Identify all tool objects that accurately match the user's query. The match can be on any field (name, manufacturer, partNumber) and should interpret descriptive terms correctly.
+  3.  Identify all tool objects that accurately match the user's query. The match can be on any field (name, manufacturer, model) and should interpret descriptive terms correctly.
   4.  Return a new JSON array containing ONLY the full tool objects that match the query.
   5.  **CRITICAL:** The structure of the returned tool objects must be identical to the structure in the master inventory. Do not add, remove, or alter any keys.
   6.  If no tools match the query, return an empty array.
@@ -510,7 +544,7 @@ const predictiveToolingSchema = {
                 properties: {
                     name: { type: Type.STRING, description: "The primary name of the tool." },
                     manufacturer: { type: Type.STRING, description: "The likely manufacturer. Use 'N/A' if unknown or generic." },
-                    partNumber: { type: Type.STRING, description: "The likely part number. Use 'N/A' if not applicable." },
+                    model: { type: Type.STRING, description: "The likely model or part number. Use 'N/A' if not applicable." },
                     quantity: { type: Type.INTEGER, description: "The recommended quantity of this tool for the job." },
                     justification: { type: Type.STRING, description: "A brief reason why this tool is needed for the specified job." },
                     category: { 
@@ -519,7 +553,7 @@ const predictiveToolingSchema = {
                         enum: ["Jacking & Lifting", "Avionics Test Equipment", "Engine Maintenance", "Airframe & Rigging", "Hydraulics & Pneumatics", "General Support Equipment", "Uncategorized"]
                     }
                 },
-                required: ['name', 'manufacturer', 'partNumber', 'quantity', 'justification', 'category'],
+                required: ['name', 'manufacturer', 'model', 'quantity', 'justification', 'category'],
             },
         },
     },
@@ -538,10 +572,10 @@ export async function predictToolsForJob(jobDescription: string): Promise<Tool[]
     1.  Read the job description carefully to understand the aircraft model and the scope of work.
     2.  Generate a list of specialized tools. Do NOT include common hand tools like standard wrenches, sockets, or screwdrivers.
     3.  Focus on items like jacks, stands, specialized test equipment, rigging tools, and ground support equipment (GSE).
-    4.  For each tool, provide a 'name', 'manufacturer', 'partNumber', a recommended 'quantity', a brief 'justification' explaining its use in this job, and a 'category'.
+    4.  For each tool, provide a 'name', 'manufacturer', 'model' (for the part number), a recommended 'quantity', a brief 'justification' explaining its use in this job, and a 'category'.
     5.  The 'category' must be one of: "Jacking & Lifting", "Avionics Test Equipment", "Engine Maintenance", "Airframe & Rigging", "Hydraulics & Pneumatics", "General Support Equipment", or "Uncategorized".
     6.  If a common manufacturer is known (e.g., Tronair), use it. Otherwise, use 'N/A'.
-    7.  If a specific part number is common for this job, provide it. Otherwise, use 'N/A'.
+    7.  If a specific part number is common for this job, provide it in the 'model' field. Otherwise, use 'N/A'.
     
     **CRITICAL OUTPUT FORMAT:**
     Your entire response MUST be a single, raw JSON object that strictly matches the provided schema. Do not include any other text, markdown, or explanations.
@@ -564,7 +598,7 @@ export async function predictToolsForJob(jobDescription: string): Promise<Tool[]
             },
         });
 
-        const parsed = cleanAndParseJson<{ tools: { name: string; manufacturer: string; partNumber: string; category: string; }[] }>(response.text);
+        const parsed = cleanAndParseJson<{ tools: { name: string; manufacturer: string; model: string; category: string; }[] }>(response.text);
         
         if (Array.isArray(parsed.tools)) {
             // Add the missing serialNumber property
@@ -590,13 +624,13 @@ const maintenanceAnalysisSchema = {
                 type: Type.OBJECT,
                 properties: {
                     task: { type: Type.STRING, description: "A concise description of the maintenance task or step." },
-                    toolPartNumbers: {
+                    toolModels: {
                         type: Type.ARRAY,
-                        description: "A list of part numbers from the provided tool list that are required for this specific task.",
+                        description: "A list of model/part numbers from the provided tool list that are required for this specific task.",
                         items: { type: Type.STRING }
                     }
                 },
-                required: ['task', 'toolPartNumbers'],
+                required: ['task', 'toolModels'],
             }
         }
     },
@@ -606,7 +640,7 @@ const maintenanceAnalysisSchema = {
 export async function analyzeMaintenanceTasks(maintenanceEvent: string, toolList: Tool[]): Promise<any> {
     const model = 'gemini-2.5-pro'; // Using a more powerful model for this complex task.
 
-    const toolListString = JSON.stringify(toolList.map(t => ({ name: t.name, partNumber: t.partNumber })));
+    const toolListString = JSON.stringify(toolList.map(t => ({ name: t.name, model: t.model })));
 
     const prompt = `You are an expert aviation maintenance planner. Your task is to analyze a maintenance event title and a corresponding list of required tools, then break the event down into logical tasks and assign the necessary tools to each task.
 
@@ -617,29 +651,29 @@ export async function analyzeMaintenanceTasks(maintenanceEvent: string, toolList
     **Instructions:**
     1.  Based on the 'Maintenance Event' title (e.g., a work order number or inspection type), deduce the primary steps or tasks involved.
     2.  For each task you identify, create a concise description.
-    3.  From the 'Provided Tool List', identify which specific tools (by their part number) are required for each task. A tool can be associated with multiple tasks.
-    4.  Structure the output as a list of tasks, where each task object contains the task description and a list of the part numbers of the tools required for it.
+    3.  From the 'Provided Tool List', identify which specific tools (by their model/part number) are required for each task. A tool can be associated with multiple tasks.
+    4.  Structure the output as a list of tasks, where each task object contains the task description and a list of the model numbers of the tools required for it.
     5.  If a tool from the list doesn't logically fit into any specific task you've identified, you may omit it from the task breakdown.
     
     **CRITICAL OUTPUT FORMAT:**
     - Your entire response MUST be a single, raw JSON object that strictly matches the provided schema.
     - Do not include any markdown (like \`\`\`json\`), text, greetings, or explanations.
-    - For the 'toolPartNumbers' array, only include part numbers that exist in the 'Provided Tool List'.
+    - For the 'toolModels' array, only include model numbers that exist in the 'Provided Tool List'.
 
     **Example Output Structure:**
     {
       "tasks": [
         {
           "task": "Prepare aircraft for jacking",
-          "toolPartNumbers": ["03-5815-0000"]
+          "toolModels": ["03-5815-0000"]
         },
         {
           "task": "Perform pitot-static system leak check",
-          "toolPartNumbers": ["6520", "P86892-4", "33410FFAB-125-4"]
+          "toolModels": ["6520", "P86892-4", "33410FFAB-125-4"]
         },
         {
           "task": "Service main landing gear struts",
-          "toolPartNumbers": ["CJMDX12-001"]
+          "toolModels": ["CJMDX12-001"]
         }
       ]
     }
@@ -657,13 +691,13 @@ export async function analyzeMaintenanceTasks(maintenanceEvent: string, toolList
             },
         });
 
-        const parsed = cleanAndParseJson<{ tasks: { task: string, toolPartNumbers: string[] }[] }>(response.text);
+        const parsed = cleanAndParseJson<{ tasks: { task: string, toolModels: string[] }[] }>(response.text);
         
-        // Map part numbers back to full tool objects
-        const toolMap = new Map(toolList.map(t => [t.partNumber, t]));
+        // Map model numbers back to full tool objects
+        const toolMap = new Map(toolList.map(t => [t.model, t]));
         const tasksWithTools: MaintenanceTask[] = parsed.tasks.map(task => ({
             task: task.task,
-            tools: task.toolPartNumbers.map(pn => toolMap.get(pn)).filter((t): t is Tool => t !== undefined)
+            tools: task.toolModels.map(m => toolMap.get(m)).filter((t): t is Tool => t !== undefined)
         }));
         
         return tasksWithTools;
@@ -693,6 +727,7 @@ const purchasePlanItemSchema = {
         status: { type: Type.STRING, description: "From the 'Status' column." },
         notes: { type: Type.STRING, description: "From the 'Comments' column." },
         received: { type: Type.BOOLEAN, description: "Derived from the 'Recieved?' column. True if 'yes' or a date is present, otherwise false." },
+        tlNumber: { type: Type.STRING, description: "From the 'TL Number (For Tooling )' column." },
     },
     required: ['id'],
 };
@@ -727,6 +762,7 @@ export async function processPurchasePlanCsv(csvContent: string): Promise<Purcha
     - 'Total Cost' -> 'totalPrice'
     - 'Web links' -> 'sourcingLink'
     - 'PO Number' -> 'requestId'
+    - 'TL Number (For Tooling )' -> 'tlNumber'
     - 'Status' -> 'status'
     - 'Comments' -> 'notes'
     - 'Recieved?' -> 'received' (boolean: true if 'yes' or a date is present, otherwise false)
@@ -770,5 +806,134 @@ export async function processPurchasePlanCsv(csvContent: string): Promise<Purcha
     } catch (error) {
         console.error("Error calling Gemini API for purchase plan CSV processing:", error);
         throw new Error("Failed to process the purchase plan file with the AI model.");
+    }
+}
+
+
+const normalizationSchema = {
+  type: Type.OBJECT,
+  properties: {
+    mappings: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          original: { type: Type.STRING },
+          normalized: { type: Type.STRING }
+        },
+        required: ['original', 'normalized']
+      }
+    }
+  },
+  required: ['mappings']
+};
+
+export async function normalizeManufacturers(manufacturers: string[]): Promise<{ original: string; normalized: string }[]> {
+    const model = 'gemini-2.5-flash';
+
+    const manufacturersString = JSON.stringify(manufacturers);
+
+    const prompt = `You are a data normalization expert. Your task is to standardize a list of manufacturer names from an aviation tool inventory.
+    
+    **Input List:**
+    ${manufacturersString}
+
+    **Instructions:**
+    1. Identify duplicates, misspellings, casing inconsistencies, and variations of the same manufacturer name (e.g., "Snap On", "SNAP-ON" -> "Snap-on").
+    2. Choose the most standard, professional, Title Case representation for each cluster.
+    3. Return a list of mappings ONLY for the names that need to be changed.
+    4. Do NOT include names that are already in the correct format.
+    5. Be conservative; do not merge distinct manufacturers unless sure they are the same.
+
+    **Output Format:**
+    Return a JSON object matching the schema: { "mappings": [ { "original": "BAD NAME", "normalized": "Good Name" }, ... ] }
+    `;
+
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: normalizationSchema,
+                temperature: 0.1,
+            },
+        });
+
+        const parsed = cleanAndParseJson<{ mappings: { original: string; normalized: string }[] }>(response.text);
+        return parsed.mappings || [];
+    } catch (error) {
+        console.error("Error normalizing manufacturers:", error);
+        throw new Error("Failed to normalize data.");
+    }
+}
+
+const saleListSchema = {
+    type: Type.OBJECT,
+    properties: {
+        items: {
+            type: Type.ARRAY,
+            description: "A list of tools for sale extracted from the text.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    id: { type: Type.STRING, description: "A unique identifier for the item (generate if missing)." },
+                    name: { type: Type.STRING, description: "Tool name or description." },
+                    model: { type: Type.STRING, description: "Model or Part Number." },
+                    manufacturer: { type: Type.STRING, description: "Manufacturer or Brand." },
+                    price: { type: Type.STRING, description: "Price listed." },
+                    condition: { type: Type.STRING, description: "Condition (New, Used, OH, etc.)." },
+                    sellerNotes: { type: Type.STRING, description: "Any other relevant details." }
+                },
+                required: ['name', 'model', 'price']
+            }
+        }
+    },
+    required: ['items']
+};
+
+export async function processForSaleCsv(csvContent: string): Promise<SaleItem[]> {
+    const model = 'gemini-2.5-flash';
+
+    const prompt = `You are an expert aviation tool broker. Your task is to analyze the following text (which may be a CSV, list, or text blob) representing a list of "Tools For Sale" and convert it into a clean JSON array.
+
+    **Instructions:**
+    1. Extract each tool item for sale.
+    2. Map fields to: name, model (part number), manufacturer, price, condition, sellerNotes.
+    3. If fields are missing (e.g. manufacturer), use "N/A" or empty string.
+    4. Clean up pricing to a standard format (e.g., "$1,200.00").
+    5. Generate a simple ID for each item if one isn't explicit in the source (e.g., "SALE-001").
+
+    **CRITICAL OUTPUT FORMAT:**
+    Your response MUST be ONLY a single, raw JSON object matching the provided schema.
+
+    ---
+    CONTENT TO PARSE:
+    ${csvContent}
+    ---
+    `;
+
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: saleListSchema,
+                temperature: 0.0,
+            },
+        });
+
+        const parsed = cleanAndParseJson<{ items: SaleItem[] }>(response.text);
+        if (Array.isArray(parsed.items)) {
+            return parsed.items;
+        }
+        throw new Error('Parsed JSON does not contain an "items" array.');
+
+    } catch (error) {
+        console.error("Error calling Gemini API for sale list processing:", error);
+        throw new Error("Failed to process the sale list file with the AI model.");
     }
 }
